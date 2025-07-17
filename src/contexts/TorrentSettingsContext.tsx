@@ -37,6 +37,14 @@ const DEFAULT_SITES: TorrentSite[] = [
     { id: '2', name: 'The Pirate Bay', urlTemplate: 'https://thepiratebay.org/search.php?q={query}' },
 ];
 
+const DEFAULT_KEYWORDS: TorrentKeyword[] = [
+  { id: 'kw1', value: '2160p', enabled: true },
+  { id: 'kw2', value: 'HDR', enabled: true },
+  { id: 'kw3', value: '1080p', enabled: true },
+  { id: 'kw4', value: '720p', enabled: false },
+  { id: 'kw5', value: 'x265', enabled: false },
+]
+
 const TorrentSettingsContext = createContext<
   TorrentSettingsContextType | undefined
 >(undefined);
@@ -52,14 +60,18 @@ export function TorrentSettingsProvider({ children }: { children: ReactNode }) {
       setSites(storedSites ? JSON.parse(storedSites) : DEFAULT_SITES);
       
       const storedKeywords = localStorage.getItem(KEYWORDS_KEY);
-      const parsedKeywords = storedKeywords ? JSON.parse(storedKeywords) : [];
-      // Ensure all keywords have an 'enabled' property for backwards compatibility
-      setKeywords(parsedKeywords.map((kw: any) => ({ ...kw, enabled: kw.enabled ?? true })));
+      if (storedKeywords) {
+        const parsedKeywords = JSON.parse(storedKeywords);
+        // Ensure all keywords have an 'enabled' property for backwards compatibility
+        setKeywords(parsedKeywords.map((kw: any) => ({ ...kw, enabled: kw.enabled ?? true })));
+      } else {
+        setKeywords(DEFAULT_KEYWORDS);
+      }
 
     } catch (error) {
       console.error('Failed to parse torrent settings from localStorage', error);
       setSites(DEFAULT_SITES);
-      setKeywords([]);
+      setKeywords(DEFAULT_KEYWORDS);
     }
     setLoading(false);
   }, []);
