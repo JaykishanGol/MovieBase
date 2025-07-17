@@ -1,7 +1,7 @@
 import Image from 'next/image';
 import { getDetails } from '@/lib/tmdb';
 import { Badge } from '@/components/ui/badge';
-import { Star, ExternalLink, Calendar, Tv, Film } from 'lucide-react';
+import { Star, ExternalLink, Calendar, Tv, Film, Download } from 'lucide-react';
 import WatchlistButton from '@/components/WatchlistButton';
 import { notFound } from 'next/navigation';
 import { Movie, TVShow } from '@/types';
@@ -32,14 +32,22 @@ export default async function DetailPage({
     data.external_ids?.imdb_id && {
       name: 'IMDb',
       url: `https://www.imdb.com/title/${data.external_ids.imdb_id}`,
+      icon: <ExternalLink className="ml-2 h-4 w-4" />,
     },
     {
       name: 'Rotten Tomatoes',
       url: `https://www.rottentomatoes.com/search?search=${encodeURIComponent(title)}`,
+      icon: <ExternalLink className="ml-2 h-4 w-4" />,
     },
     {
       name: 'Reddit',
       url: `https://www.reddit.com/r/${isMovie ? 'movies' : 'television'}/search/?q=${encodeURIComponent(title)} ${year}&restrict_sr=1`,
+      icon: <ExternalLink className="ml-2 h-4 w-4" />,
+    },
+    {
+      name: 'Torrent',
+      url: `https://1337x.to/search/${encodeURIComponent(title)}/1/`,
+      icon: <Download className="ml-2 h-4 w-4" />,
     },
   ].filter(Boolean);
 
@@ -116,7 +124,7 @@ export default async function DetailPage({
                 {externalLinks.map(link => link && (
                   <Button asChild key={link.name} variant="outline">
                     <a href={link.url} target="_blank" rel="noopener noreferrer">
-                      {link.name} <ExternalLink className="ml-2 h-4 w-4" />
+                      {link.name} {link.icon}
                     </a>
                   </Button>
                 ))}
