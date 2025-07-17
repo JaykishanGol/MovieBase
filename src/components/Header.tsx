@@ -1,7 +1,7 @@
 'use client';
 
 import Link from 'next/link';
-import { Clapperboard, LogIn, LogOut } from 'lucide-react';
+import { Clapperboard, LogIn, LogOut, Settings } from 'lucide-react';
 import Search from './Search';
 import { usePathname } from 'next/navigation';
 import { cn } from '@/lib/utils';

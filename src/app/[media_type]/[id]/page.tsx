@@ -1,14 +1,12 @@
 import Image from 'next/image';
 import { getDetails } from '@/lib/tmdb';
 import { Badge } from '@/components/ui/badge';
-import { Star, ExternalLink, Calendar, Tv, Film } from 'lucide-react';
+import { Star, ExternalLink, Calendar, Tv, Film, Search } from 'lucide-react';
 import WatchlistButton from '@/components/WatchlistButton';
 import { notFound } from 'next/navigation';
 import { Movie, TVShow } from '@/types';
 import { Button } from '@/components/ui/button';
-import TorrentSearch from '@/components/TorrentSearch';
-import TorrentSettings from '@/components/TorrentSettings';
-import TorrentKeywords from '@/components/TorrentKeywords';
+import Link from 'next/link';
 
 export default async function DetailPage({
   params,
@@ -130,15 +128,14 @@ export default async function DetailPage({
             </div>
             
             <div className="mt-8">
-                <div className="flex flex-wrap gap-4 items-center">
-                    <h3 className="text-lg font-semibold w-full">Torrent Search</h3>
-                    <TorrentSearch title={title} year={year} />
-                    <TorrentSettings />
-                </div>
+                <h3 className="text-lg font-semibold mb-2">Torrent Search</h3>
+                <Button asChild>
+                  <Link href={`/search-generator?title=${encodeURIComponent(title)}&year=${year}`}>
+                    <Search className="mr-2 h-4 w-4" />
+                    Generate Search URLs
+                  </Link>
+                </Button>
             </div>
-            
-            <TorrentKeywords />
-
           </div>
         </div>
       </div>

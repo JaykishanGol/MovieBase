@@ -43,7 +43,7 @@ export default function TorrentSettings() {
         <SheetHeader>
           <SheetTitle>Torrent Site Settings</SheetTitle>
           <SheetDescription>
-            Manage your torrent sites. Custom keywords can now be managed directly on the movie/TV detail pages.
+            Manage your saved torrent sites. These will be available in the Search Generator.
           </SheetDescription>
         </SheetHeader>
         <div className="py-4 space-y-8">
@@ -86,7 +86,7 @@ export default function TorrentSettings() {
                   id="site-url"
                   value={newSiteUrl}
                   onChange={(e) => setNewSiteUrl(e.target.value)}
-                  placeholder="e.g., https://1337x.to/search/{query}/1/"
+                  placeholder="e.g., https://1377x.to/search/{query}/1/"
                 />
                  <p className="text-xs text-muted-foreground">Use {'{query}'} as a placeholder for the search term.</p>
               </div>
