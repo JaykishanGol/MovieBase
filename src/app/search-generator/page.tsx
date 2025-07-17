@@ -92,8 +92,28 @@ function SearchGenerator() {
       setGeneratedUrls([]);
       return;
     }
+    
+    const keywords = Array.from(selectedKeywords);
+    const seasonRegex = /^S\d+$/i;
+    const episodeRegex = /^E\d+$/i;
 
-    const keywordString = Array.from(selectedKeywords).join(' ');
+    const seasons = keywords.filter(kw => seasonRegex.test(kw));
+    const episodes = keywords.filter(kw => episodeRegex.test(kw));
+    const otherKeywords = keywords.filter(kw => !seasonRegex.test(kw) && !episodeRegex.test(kw));
+
+    let seasonEpisodeCombinations: string[] = [];
+    if (seasons.length > 0 && episodes.length > 0) {
+        seasons.forEach(season => {
+            episodes.forEach(episode => {
+                seasonEpisodeCombinations.push(`${season}${episode}`);
+            });
+        });
+    } else {
+        seasonEpisodeCombinations.push(...seasons, ...episodes);
+    }
+    
+    const keywordString = [...seasonEpisodeCombinations, ...otherKeywords].join(' ');
+
     let searchQuery = `${title}`;
     if (includeYear && year) {
       searchQuery += ` ${year}`;
