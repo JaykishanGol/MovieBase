@@ -30,7 +30,9 @@ function SearchGenerator() {
     removeKeyword,
   } = useTorrentSettings();
 
-  const [selectedSites, setSelectedSites] = useState<Set<string>>(new Set());
+  const [selectedSites, setSelectedSites] = useState<Set<string>>(
+    new Set(sites.map((site) => site.id))
+  );
   const [selectedKeywords, setSelectedKeywords] = useState<Set<string>>(
     new Set()
   );
