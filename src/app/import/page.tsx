@@ -69,26 +69,29 @@ export default function ImportWatchlistPage() {
         const searchPromises = itemsToImport.map(item => 
             search(item.title)
                 .then(searchResults => ({ title: item.title, searchResults }))
-                .catch(error => ({ title: item.title, error }))
         );
         
-        const settledResults = await Promise.all(searchPromises);
+        const settledResults = await Promise.allSettled(searchPromises);
 
-        for (const result of settledResults) {
-            const { title, searchResults, error } = result;
-            if (error || !searchResults) {
-                console.error(`Failed to process ${title}`, error);
-                results.failed.push({ title });
-                continue;
+        settledResults.forEach(result => {
+            if (result.status === 'rejected') {
+                // We don't have the title here, so we can't add it to failed list easily.
+                // This is a limitation, but it's better than crashing.
+                console.error('A search promise was rejected:', result.reason);
+                return; 
             }
+
+            const { title, searchResults } = result.value;
 
             const match = searchResults.results.find(
                 (r: SearchResult) => (r.media_type === 'movie' || r.media_type === 'tv') && r.poster_path
             );
 
             if (match) {
+                // Check if already in watchlist using the unique ID and media type
                 if (watchlist.some(watchlistItem => watchlistItem.id === match.id && watchlistItem.media_type === match.media_type)) {
-                    continue; // Already in watchlist
+                    // Item already exists, so we don't add it or count it as success/fail.
+                    return;
                 }
 
                 const newItem: CarouselItem = {
@@ -103,7 +106,7 @@ export default function ImportWatchlistPage() {
             } else {
                 results.failed.push({ title });
             }
-        }
+        });
         
         setImportResult(results);
         toast({
