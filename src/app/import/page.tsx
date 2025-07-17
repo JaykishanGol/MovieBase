@@ -34,7 +34,7 @@ export default function ImportWatchlistPage() {
     const [jsonInput, setJsonInput] = useState('');
     const [isProcessing, setIsProcessing] = useState(false);
     const [importResult, setImportResult] = useState<ImportResult | null>(null);
-    const { addItem, watchlist } = useWatchlist();
+    const { addItems, watchlist } = useWatchlist();
     const { toast } = useToast();
 
     const handleImport = async () => {
@@ -69,31 +69,30 @@ export default function ImportWatchlistPage() {
         const searchPromises = itemsToImport.map(item => 
             search(item.title)
                 .then(searchResults => ({ title: item.title, searchResults }))
+                .catch(error => {
+                    console.error(`Failed to search for title "${item.title}":`, error);
+                    return { title: item.title, searchResults: null }; // Gracefully handle individual search failures
+                })
         );
         
-        const settledResults = await Promise.allSettled(searchPromises);
+        const settledResults = await Promise.all(searchPromises);
+        
+        const newItems: CarouselItem[] = [];
+        const existingItemIds = new Set(watchlist.map(item => `${item.media_type}-${item.id}`));
 
         settledResults.forEach(result => {
-            if (result.status === 'rejected') {
-                // We don't have the title here, so we can't add it to failed list easily.
-                // This is a limitation, but it's better than crashing.
-                console.error('A search promise was rejected:', result.reason);
-                return; 
+            if (!result || !result.searchResults) {
+                if (result) results.failed.push({ title: result.title });
+                return;
             }
 
-            const { title, searchResults } = result.value;
+            const { title, searchResults } = result;
 
             const match = searchResults.results.find(
                 (r: SearchResult) => (r.media_type === 'movie' || r.media_type === 'tv') && r.poster_path
             );
 
             if (match) {
-                // Check if already in watchlist using the unique ID and media type
-                if (watchlist.some(watchlistItem => watchlistItem.id === match.id && watchlistItem.media_type === match.media_type)) {
-                    // Item already exists, so we don't add it or count it as success/fail.
-                    return;
-                }
-
                 const newItem: CarouselItem = {
                     id: match.id,
                     title: match.title || match.name || '',
@@ -101,12 +100,23 @@ export default function ImportWatchlistPage() {
                     poster_path: match.poster_path,
                     release_date: match.release_date || match.first_air_date || '',
                 };
-                addItem(newItem);
-                results.successful.push({ title, importedTitle: newItem.title });
+
+                const uniqueId = `${newItem.media_type}-${newItem.id}`;
+
+                // Check against both already existing items and items we are about to add
+                if (!existingItemIds.has(uniqueId)) {
+                    newItems.push(newItem);
+                    existingItemIds.add(uniqueId); // Add to set to prevent duplicates within the same import
+                    results.successful.push({ title, importedTitle: newItem.title });
+                }
             } else {
                 results.failed.push({ title });
             }
         });
+        
+        if (newItems.length > 0) {
+            addItems(newItems);
+        }
         
         setImportResult(results);
         toast({

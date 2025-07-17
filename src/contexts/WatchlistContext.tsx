@@ -1,3 +1,4 @@
+
 'use client';
 
 import {
@@ -12,6 +13,7 @@ import { CarouselItem } from '@/types';
 interface WatchlistContextType {
   watchlist: CarouselItem[];
   addItem: (item: CarouselItem) => void;
+  addItems: (items: CarouselItem[]) => void;
   removeItem: (id: number, media_type: 'movie' | 'tv') => void;
   loading: boolean;
 }
@@ -58,25 +60,52 @@ export function WatchlistProvider({ children }: { children: ReactNode }) {
   }
 
   const addItem = (item: CarouselItem) => {
-    // Prevent adding duplicates
-    if (watchlist.some(i => i.id === item.id && i.media_type === item.media_type)) {
-      return; // Item already in watchlist
-    }
-    const newWatchlist = [...watchlist, item];
-    setWatchlist(newWatchlist);
-    updateLocalStorage(newWatchlist);
+    setWatchlist((prevWatchlist) => {
+      // Prevent adding duplicates
+      if (prevWatchlist.some(i => i.id === item.id && i.media_type === item.media_type)) {
+        return prevWatchlist; // Item already in watchlist
+      }
+      const newWatchlist = [...prevWatchlist, item];
+      updateLocalStorage(newWatchlist);
+      return newWatchlist;
+    });
+  };
+
+  const addItems = (items: CarouselItem[]) => {
+    setWatchlist((prevWatchlist) => {
+      const newItems: CarouselItem[] = [];
+      const existingIds = new Set(prevWatchlist.map(i => `${i.media_type}-${i.id}`));
+      
+      for (const item of items) {
+        const uniqueId = `${item.media_type}-${item.id}`;
+        if (!existingIds.has(uniqueId)) {
+          newItems.push(item);
+          existingIds.add(uniqueId);
+        }
+      }
+      
+      if (newItems.length === 0) {
+        return prevWatchlist;
+      }
+
+      const newWatchlist = [...prevWatchlist, ...newItems];
+      updateLocalStorage(newWatchlist);
+      return newWatchlist;
+    });
   };
 
   const removeItem = (id: number, media_type: 'movie' | 'tv') => {
-    const newWatchlist = watchlist.filter(
-      (item) => !(item.id === id && item.media_type === media_type)
-    );
-    setWatchlist(newWatchlist);
-    updateLocalStorage(newWatchlist);
+    setWatchlist((prevWatchlist) => {
+      const newWatchlist = prevWatchlist.filter(
+        (item) => !(item.id === id && item.media_type === media_type)
+      );
+      updateLocalStorage(newWatchlist);
+      return newWatchlist;
+    });
   };
 
   return (
-    <WatchlistContext.Provider value={{ watchlist, addItem, removeItem, loading }}>
+    <WatchlistContext.Provider value={{ watchlist, addItem, addItems, removeItem, loading }}>
       {children}
     </WatchlistContext.Provider>
   );
