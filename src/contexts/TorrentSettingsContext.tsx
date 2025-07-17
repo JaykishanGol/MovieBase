@@ -40,9 +40,11 @@ const DEFAULT_SITES: TorrentSite[] = [
 const DEFAULT_KEYWORDS: TorrentKeyword[] = [
   { id: 'kw1', value: '2160p', enabled: true },
   { id: 'kw2', value: 'HDR', enabled: true },
-  { id: 'kw3', value: '1080p', enabled: true },
-  { id: 'kw4', value: '720p', enabled: false },
-  { id: 'kw5', value: 'x265', enabled: false },
+  { id: 'kw3', value: 'S', enabled: false },
+  { id: 'kw4', value: '01', enabled: false },
+  { id: 'kw5', value: '02', enabled: false },
+  { id: 'kw6', value: '03', enabled: false },
+  { id: 'kw7', value: 'E', enabled: false },
 ]
 
 const TorrentSettingsContext = createContext<
