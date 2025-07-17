@@ -8,6 +8,7 @@ import { usePathname } from 'next/navigation';
 import { cn } from '@/lib/utils';
 import SurpriseMe from './SurpriseMe';
 import GenreDropdown from './GenreDropdown';
+import { ThemeToggle } from './ThemeToggle';
 
 export default function Header() {
   const pathname = usePathname();
@@ -44,7 +45,10 @@ export default function Header() {
         </nav>
         <div className="flex flex-1 items-center justify-end space-x-4">
           <Search />
-          <SurpriseMe />
+          <div className="flex items-center space-x-2">
+            <SurpriseMe />
+            <ThemeToggle />
+          </div>
         </div>
       </div>
     </header>

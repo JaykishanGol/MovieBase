@@ -5,6 +5,7 @@ import { WatchlistProvider } from '@/contexts/WatchlistContext';
 import { Toaster } from '@/components/ui/toaster';
 import Header from '@/components/Header';
 import { TorrentSettingsProvider } from '@/contexts/TorrentSettingsContext';
+import { ThemeProvider } from '@/contexts/ThemeContext';
 
 const inter = Inter({ subsets: ['latin'], variable: '--font-inter' });
 
@@ -19,15 +20,22 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en" className="dark">
+    <html lang="en" suppressHydrationWarning>
       <body className={`${inter.variable} font-body antialiased`}>
-        <WatchlistProvider>
-          <TorrentSettingsProvider>
-            <Header />
-            <main>{children}</main>
-            <Toaster />
-          </TorrentSettingsProvider>
-        </WatchlistProvider>
+        <ThemeProvider
+          attribute="class"
+          defaultTheme="dark"
+          enableSystem
+          disableTransitionOnChange
+        >
+          <WatchlistProvider>
+            <TorrentSettingsProvider>
+              <Header />
+              <main>{children}</main>
+              <Toaster />
+            </TorrentSettingsProvider>
+          </WatchlistProvider>
+        </ThemeProvider>
       </body>
     </html>
   );
