@@ -51,11 +51,6 @@ export default function ImportWatchlistPage() {
 
         for (const item of titles) {
             try {
-                // Skip if title already in watchlist to avoid redundant searches
-                if (watchlist.some(watchlistItem => watchlistItem.title.toLowerCase() === item.title.toLowerCase())) {
-                    continue;
-                }
-                
                 // Don't process items with title 'Unknown Item' from Google's export
                 if (item.title === 'Unknown Item') {
                     continue;
