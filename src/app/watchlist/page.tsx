@@ -2,20 +2,14 @@
 
 import MovieCard from '@/components/MovieCard';
 import { Button } from '@/components/ui/button';
-// import { useAuth } from '@/contexts/AuthContext';
-// import { useWatchlist } from '@/contexts/WatchlistContext';
+import { useAuth } from '@/contexts/AuthContext';
+import { useWatchlist } from '@/contexts/WatchlistContext';
 import { Loader2 } from 'lucide-react';
-import { useState } from 'react';
 
 export default function WatchlistPage() {
-  // const { watchlist, loading: watchlistLoading } = useWatchlist();
-  // const { user, loading: authLoading, login } = useAuth();
-  // const loading = authLoading || watchlistLoading;
-  const watchlist = [];
-  const loading = false;
-  const user = null;
-  const login = () => {};
-
+  const { watchlist, loading: watchlistLoading } = useWatchlist();
+  const { user, loading: authLoading, login } = useAuth();
+  const loading = authLoading || watchlistLoading;
 
   if (loading) {
     return (

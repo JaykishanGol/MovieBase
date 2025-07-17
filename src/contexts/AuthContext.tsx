@@ -7,16 +7,14 @@ import {
   useEffect,
   ReactNode,
 } from 'react';
-import {
-  getAuth,
-  onAuthStateChanged,
-  signInWithPopup,
-  GoogleAuthProvider,
-  signOut,
-  User,
-} from 'firebase/auth';
-import { firebaseApp } from '@/lib/firebase';
-import { useToast } from '@/hooks/use-toast';
+
+// Mock User type
+export interface User {
+  uid: string;
+  displayName: string | null;
+  email: string | null;
+  photoURL: string | null;
+}
 
 interface AuthContextType {
   user: User | null;
@@ -27,40 +25,34 @@ interface AuthContextType {
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
-const auth = getAuth(firebaseApp);
-const provider = new GoogleAuthProvider();
 
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
-  const { toast } = useToast();
 
   useEffect(() => {
-    const unsubscribe = onAuthStateChanged(auth, (user) => {
-      setUser(user);
-      setLoading(false);
-    });
-    return () => unsubscribe();
+    // Check if user is "logged in" from local storage
+    const storedUser = localStorage.getItem('mockUser');
+    if (storedUser) {
+      setUser(JSON.parse(storedUser));
+    }
+    setLoading(false);
   }, []);
 
-  const login = async () => {
-    try {
-      await signInWithPopup(auth, provider);
-      toast({ description: "Successfully logged in!"});
-    } catch (error) {
-      console.error('Error during Google sign-in:', error);
-      toast({ variant: 'destructive', description: "Login failed. Please try again."});
-    }
+  const login = () => {
+    const mockUser: User = {
+      uid: 'mock-user-id',
+      displayName: 'Guest User',
+      email: 'guest@example.com',
+      photoURL: `https://i.pravatar.cc/150?u=mock-user-id`,
+    };
+    localStorage.setItem('mockUser', JSON.stringify(mockUser));
+    setUser(mockUser);
   };
 
-  const logout = async () => {
-    try {
-      await signOut(auth);
-      toast({ description: "Successfully logged out!"});
-    } catch (error) {
-      console.error('Error signing out:', error);
-      toast({ variant: 'destructive', description: "Logout failed. Please try again."});
-    }
+  const logout = () => {
+    localStorage.removeItem('mockUser');
+    setUser(null);
   };
 
   return (

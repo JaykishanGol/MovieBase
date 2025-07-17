@@ -5,7 +5,7 @@ import { Clapperboard, LogIn, LogOut } from 'lucide-react';
 import Search from './Search';
 import { usePathname } from 'next/navigation';
 import { cn } from '@/lib/utils';
-// import { useAuth } from '@/contexts/AuthContext';
+import { useAuth } from '@/contexts/AuthContext';
 import { Avatar, AvatarFallback, AvatarImage } from './ui/avatar';
 import { Button } from './ui/button';
 import {
@@ -19,11 +19,7 @@ import {
 
 export default function Header() {
   const pathname = usePathname();
-  // const { user, login, logout } = useAuth();
-  const user = null;
-  const login = () => {};
-  const logout = () => {};
-
+  const { user, login, logout } = useAuth();
 
   const navLinks = [
     { href: '/', label: 'Home' },
