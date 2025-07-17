@@ -8,6 +8,7 @@ import { Movie, TVShow } from '@/types';
 import { Button } from '@/components/ui/button';
 import TorrentSearch from '@/components/TorrentSearch';
 import TorrentSettings from '@/components/TorrentSettings';
+import TorrentKeywords from '@/components/TorrentKeywords';
 
 export default async function DetailPage({
   params,
@@ -128,12 +129,15 @@ export default async function DetailPage({
               </div>
             </div>
             
-            <div className="mt-4">
-               <div className="flex flex-wrap gap-4 items-center">
-                <TorrentSearch title={title} year={year} />
-                <TorrentSettings />
-              </div>
+            <div className="mt-8">
+                <div className="flex flex-wrap gap-4 items-center">
+                    <h3 className="text-lg font-semibold w-full">Torrent Search</h3>
+                    <TorrentSearch title={title} year={year} />
+                    <TorrentSettings />
+                </div>
             </div>
+            
+            <TorrentKeywords />
 
           </div>
         </div>
