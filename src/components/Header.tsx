@@ -16,6 +16,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from './ui/dropdown-menu';
+import TorrentSettings from './TorrentSettings';
 
 export default function Header() {
   const pathname = usePathname();
@@ -51,6 +52,7 @@ export default function Header() {
         </nav>
         <div className="flex flex-1 items-center justify-end space-x-4">
           <Search />
+          <TorrentSettings />
           {user ? (
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
