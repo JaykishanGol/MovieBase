@@ -125,6 +125,11 @@ export default async function DetailPage({
                     </a>
                   </Button>
                 ))}
+              </div>
+            </div>
+            
+            <div className="mt-4">
+               <div className="flex flex-wrap gap-4 items-center">
                 <TorrentSearch title={title} year={year} />
                 <TorrentSettings />
               </div>
