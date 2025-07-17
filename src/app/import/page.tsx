@@ -30,10 +30,12 @@ export default function ImportWatchlistPage() {
         let titles: { title: string }[] = [];
         try {
             const parsedJson = JSON.parse(jsonInput);
-            if (Array.isArray(parsedJson) && parsedJson.every(item => typeof item.title === 'string')) {
+            if (parsedJson.items && Array.isArray(parsedJson.items)) {
+                 titles = parsedJson.items.filter((item: any) => item && typeof item.title === 'string');
+            } else if (Array.isArray(parsedJson) && parsedJson.every(item => typeof item.title === 'string')) {
                 titles = parsedJson;
             } else {
-                throw new Error('Invalid JSON format. Expected an array of objects with a "title" property.');
+                throw new Error('Invalid JSON format. Expected an object with an "items" array, or an array of objects with a "title" property.');
             }
         } catch (error) {
             toast({
@@ -51,6 +53,10 @@ export default function ImportWatchlistPage() {
             try {
                 // Skip if already in watchlist
                 if (watchlist.some(watchlistItem => watchlistItem.title.toLowerCase() === item.title.toLowerCase())) {
+                    continue;
+                }
+                
+                if (item.title === 'Unknown Item') {
                     continue;
                 }
 
@@ -81,11 +87,11 @@ export default function ImportWatchlistPage() {
         }
 
         setImportResult(results);
-        setIsProcessing(false);
         toast({
             title: 'Import Complete',
             description: `${results.successful.length} items imported successfully.`,
         });
+        setIsProcessing(false);
     };
 
     return (
@@ -94,12 +100,12 @@ export default function ImportWatchlistPage() {
                 <CardHeader>
                     <CardTitle>Import Google Watchlist</CardTitle>
                     <CardDescription>
-                        Paste the content of your Google Watchlist JSON file here. The expected format is an array of objects, where each object has a "title" property.
+                        Paste the content of your Google Watchlist JSON file here. The expected format is an object with an "items" array, like: {"{ \"items\": [{\"title\": \"Movie Title\"}] }"}
                     </CardDescription>
                 </CardHeader>
                 <CardContent className="space-y-4">
                     <Textarea
-                        placeholder='[{"title": "The Matrix"}, {"title": "Breaking Bad"}]'
+                        placeholder='{ "items": [{ "title": "The Matrix" }, { "title": "Breaking Bad" }] }'
                         value={jsonInput}
                         onChange={(e) => setJsonInput(e.target.value)}
                         className="min-h-[200px] font-mono"
