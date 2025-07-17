@@ -2,18 +2,29 @@
 
 import { Bookmark, BookmarkCheck } from 'lucide-react';
 import { Button } from './ui/button';
-import { useWatchlist } from '@/contexts/WatchlistContext';
+// import { useWatchlist } from '@/contexts/WatchlistContext';
 import { useToast } from '@/hooks/use-toast';
 import { CarouselItem } from '@/types';
-import { useAuth } from '@/contexts/AuthContext';
+// import { useAuth } from '@/contexts/AuthContext';
+import { useState } from 'react';
 
 interface WatchlistButtonProps {
   item: CarouselItem;
 }
 
 export default function WatchlistButton({ item }: WatchlistButtonProps) {
-  const { watchlist, addItem, removeItem } = useWatchlist();
-  const { user, login } = useAuth();
+  // const { watchlist, addItem, removeItem } = useWatchlist();
+  // const { user, login } = useAuth();
+  const [watchlist, setWatchlist] = useState<CarouselItem[]>([]);
+  const user = null;
+  const login = () => {};
+  const addItem = (item: CarouselItem) => {
+    setWatchlist(prev => [...prev, item]);
+  }
+  const removeItem = (id: number, media_type: 'movie' | 'tv') => {
+    setWatchlist(prev => prev.filter(i => !(i.id === id && i.media_type === media_type)));
+  }
+
   const { toast } = useToast();
   const isInWatchlist = watchlist.some((i) => i.id === item.id && i.media_type === item.media_type);
 
