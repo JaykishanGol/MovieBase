@@ -1,3 +1,4 @@
+
 'use client';
 
 import {
@@ -36,6 +37,7 @@ const DEFAULT_SITES: TorrentSite[] = [
     { id: '1', name: '1337x', urlTemplate: 'https://1337x.to/search/{query}/1/' },
     { id: '2', name: 'The Pirate Bay', urlTemplate: 'https://thepiratebay.org/search.php?q={query}' },
     { id: '3', name: 'uindex.org', urlTemplate: 'https://uindex.org/search.php?search={query}&c=0' },
+    { id: '4', name: 'bt4gprx', urlTemplate: 'https://bt4gprx.com/search?q={query}%20' },
 ];
 
 const DEFAULT_KEYWORDS: TorrentKeyword[] = [
