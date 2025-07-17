@@ -31,7 +31,18 @@ export function WatchlistProvider({ children }: { children: ReactNode }) {
     try {
       const storedWatchlist = localStorage.getItem(WATCHLIST_KEY);
       if (storedWatchlist) {
-        setWatchlist(JSON.parse(storedWatchlist));
+        // Ensure no duplicates are loaded from localStorage initially
+        const parsed = JSON.parse(storedWatchlist) as CarouselItem[];
+        const uniqueItems: CarouselItem[] = [];
+        const seen = new Set<string>();
+        for (const item of parsed) {
+            const key = `${item.media_type}-${item.id}`;
+            if (!seen.has(key)) {
+                uniqueItems.push(item);
+                seen.add(key);
+            }
+        }
+        setWatchlist(uniqueItems);
       } else {
         setWatchlist([]);
       }
@@ -47,6 +58,10 @@ export function WatchlistProvider({ children }: { children: ReactNode }) {
   }
 
   const addItem = (item: CarouselItem) => {
+    // Prevent adding duplicates
+    if (watchlist.some(i => i.id === item.id && i.media_type === item.media_type)) {
+      return; // Item already in watchlist
+    }
     const newWatchlist = [...watchlist, item];
     setWatchlist(newWatchlist);
     updateLocalStorage(newWatchlist);
