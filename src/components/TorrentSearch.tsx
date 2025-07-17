@@ -10,14 +10,24 @@ interface TorrentSearchProps {
 }
 
 export default function TorrentSearch({ title, year }: TorrentSearchProps) {
-  const { sites, keywords } = useTorrentSettings();
+  const { sites, keywords, season, episode } = useTorrentSettings();
 
   if (sites.length === 0) {
     return null;
   }
 
+  const formatNumber = (num: number) => num.toString().padStart(2, '0');
+
   const generateSearchUrl = (siteUrlTemplate: string) => {
-    const enabledKeywords = keywords.filter(k => k.enabled).map(k => k.value).join(' ');
+    const enabledKeywords = keywords
+      .filter(k => k.enabled)
+      .map(k => {
+        if (k.value === 'S') return `S${formatNumber(season)}`;
+        if (k.value === 'E') return `E${formatNumber(episode)}`;
+        return k.value;
+      })
+      .join(' ');
+      
     const searchQuery = `${title} ${year} ${enabledKeywords}`.trim().replace(/\s+/g, ' ');
     return siteUrlTemplate.replace('{query}', encodeURIComponent(searchQuery));
   };

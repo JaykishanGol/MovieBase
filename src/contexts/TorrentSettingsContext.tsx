@@ -28,6 +28,10 @@ interface TorrentSettingsContextType {
   addKeyword: (value: string) => void;
   removeKeyword: (id: string) => void;
   toggleKeyword: (id: string) => void;
+  season: number;
+  setSeason: (season: number) => void;
+  episode: number;
+  setEpisode: (episode: number) => void;
 }
 
 const SITES_KEY = 'torrent_sites';
@@ -41,9 +45,6 @@ const DEFAULT_KEYWORDS: TorrentKeyword[] = [
   { id: 'kw1', value: '2160p', enabled: true },
   { id: 'kw2', value: 'HDR', enabled: true },
   { id: 'kw3', value: 'S', enabled: false },
-  { id: 'kw4', value: '01', enabled: false },
-  { id: 'kw5', value: '02', enabled: false },
-  { id: 'kw6', value: '03', enabled: false },
   { id: 'kw7', value: 'E', enabled: false },
 ]
 
@@ -54,6 +55,8 @@ const TorrentSettingsContext = createContext<
 export function TorrentSettingsProvider({ children }: { children: ReactNode }) {
   const [sites, setSites] = useState<TorrentSite[]>([]);
   const [keywords, setKeywords] = useState<TorrentKeyword[]>([]);
+  const [season, setSeason] = useState(1);
+  const [episode, setEpisode] = useState(1);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -64,7 +67,6 @@ export function TorrentSettingsProvider({ children }: { children: ReactNode }) {
       const storedKeywords = localStorage.getItem(KEYWORDS_KEY);
       if (storedKeywords) {
         const parsedKeywords = JSON.parse(storedKeywords);
-        // Ensure all keywords have an 'enabled' property for backwards compatibility
         setKeywords(parsedKeywords.map((kw: any) => ({ ...kw, enabled: kw.enabled ?? true })));
       } else {
         setKeywords(DEFAULT_KEYWORDS);
@@ -126,6 +128,10 @@ export function TorrentSettingsProvider({ children }: { children: ReactNode }) {
         addKeyword,
         removeKeyword,
         toggleKeyword,
+        season,
+        setSeason,
+        episode,
+        setEpisode,
       }}
     >
       {children}
