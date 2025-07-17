@@ -64,9 +64,8 @@ export default function ImportWatchlistPage() {
         }
 
         const results: ImportResult = { successful: [], failed: [] };
-        const itemsToImport = titles.filter(item => item.title !== 'Unknown Item');
-
-        const searchPromises = itemsToImport.map(item => 
+        
+        const searchPromises = titles.map(item => 
             search(item.title)
                 .then(searchResults => ({ title: item.title, searchResults }))
                 .catch(error => {
@@ -103,10 +102,9 @@ export default function ImportWatchlistPage() {
 
                 const uniqueId = `${newItem.media_type}-${newItem.id}`;
 
-                // Check against both already existing items and items we are about to add
                 if (!existingItemIds.has(uniqueId)) {
                     newItems.push(newItem);
-                    existingItemIds.add(uniqueId); // Add to set to prevent duplicates within the same import
+                    existingItemIds.add(uniqueId);
                     results.successful.push({ title, importedTitle: newItem.title });
                 }
             } else {
