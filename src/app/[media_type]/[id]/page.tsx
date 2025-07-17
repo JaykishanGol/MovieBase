@@ -1,3 +1,4 @@
+
 import Image from 'next/image';
 import { getDetails } from '@/lib/tmdb';
 import { Badge } from '@/components/ui/badge';
@@ -94,16 +95,20 @@ export default async function DetailPage({
                     <Calendar className="h-4 w-4" />
                     <span>{year || 'N/A'}</span>
                 </div>
-                <div className="flex items-center gap-2">
-                    <Star className="h-4 w-4 text-yellow-400" />
-                    <span>{data.vote_average.toFixed(1)} / 10</span>
-                </div>
                 {isMovie && item.runtime && <span>{Math.floor(item.runtime / 60)}h {item.runtime % 60}m</span>}
                 {!isMovie && show.number_of_seasons && <span>{show.number_of_seasons} Season(s)</span>}
             </div>
 
             <h1 className="mt-4 text-5xl font-bold font-headline">{title}</h1>
             
+             <div className="mt-4 flex items-center gap-4">
+                <div className="flex items-center gap-2">
+                    <Star className="h-5 w-5 text-yellow-400" />
+                    <span className="text-xl font-bold">{data.vote_average.toFixed(1)}</span>
+                    <span className="text-sm text-muted-foreground">/ 10 (TMDb)</span>
+                </div>
+            </div>
+
             <div className="mt-4 flex flex-wrap gap-2">
               {data.genres.map((genre) => (
                 <Badge key={genre.id} variant="secondary">
