@@ -66,6 +66,11 @@ export default function ImportWatchlistPage() {
                 );
 
                 if (match) {
+                    // Second check to prevent adding duplicates by ID
+                    if (watchlist.some(watchlistItem => watchlistItem.id === match.id)) {
+                        continue;
+                    }
+
                     const newItem: CarouselItem = {
                         id: match.id,
                         title: match.title || match.name || '',
