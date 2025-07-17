@@ -1,10 +1,11 @@
 import Link from 'next/link';
 import Image from 'next/image';
-import { getTrending } from '@/lib/tmdb';
+import { getTrending, getPopular } from '@/lib/tmdb';
 import MovieCarousel from '@/components/MovieCarousel';
 import { Button } from '@/components/ui/button';
 import { PlayCircle } from 'lucide-react';
 import { CarouselItem } from '@/types';
+import GenreTabs from '@/components/GenreTabs';
 
 function transformToCarouselItems(
   results: any[],
@@ -21,9 +22,9 @@ function transformToCarouselItems(
 
 export default async function Home() {
   const trendingMovies = await getTrending('movie');
-  const popularMovies = await getTrending('movie', 'week'); // Using trending weekly as popular
+  const popularMovies = await getPopular('movie');
   const trendingTv = await getTrending('tv');
-  const popularTv = await getTrending('tv', 'week');
+  const popularTv = await getPopular('tv');
 
   const heroItem = trendingMovies.results[0];
 
@@ -55,7 +56,11 @@ export default async function Home() {
         </div>
       )}
 
-      <div className="container space-y-12 py-12">
+      <div className="container py-12">
+        <GenreTabs />
+      </div>
+
+       <div className="container space-y-12 pb-12">
         <MovieCarousel
           title="Trending Movies"
           items={transformToCarouselItems(trendingMovies.results, 'movie')}
