@@ -13,7 +13,7 @@
     --popover: 240 10% 3.9%;
     --popover-foreground: 0 0% 98%;
 
-    --primary: 212 100% 50%; /* #007AFF */
+    --primary: 24 95% 53%; /* Tangerine Orange */
     --primary-foreground: 0 0% 98%;
 
     --secondary: 240 3.7% 15.9%;
@@ -22,7 +22,7 @@
     --muted: 240 3.7% 15.9%;
     --muted-foreground: 240 5% 64.9%;
 
-    --accent: 212 100% 50%; /* #007AFF */
+    --accent: 24 95% 53%; /* Tangerine Orange */
     --accent-foreground: 0 0% 98%;
 
     --destructive: 0 62.8% 30.6%;
@@ -30,7 +30,7 @@
 
     --border: 240 3.7% 15.9%;
     --input: 240 3.7% 15.9%;
-    --ring: 212 100% 50%;
+    --ring: 24 95% 53%;
 
     --radius: 0.5rem;
   }
@@ -45,7 +45,7 @@
     --popover: 240 10% 3.9%;
     --popover-foreground: 0 0% 98%;
 
-    --primary: 212 100% 50%; /* #007AFF */
+    --primary: 24 95% 53%; /* Tangerine Orange */
     --primary-foreground: 0 0% 98%;
 
     --secondary: 240 3.7% 15.9%;
@@ -54,7 +54,7 @@
     --muted: 240 3.7% 15.9%;
     --muted-foreground: 240 5% 64.9%;
 
-    --accent: 212 100% 50%; /* #007AFF */
+    --accent: 24 95% 53%; /* Tangerine Orange */
     --accent-foreground: 0 0% 98%;
 
     --destructive: 0 62.8% 30.6%;
@@ -62,7 +62,7 @@
 
     --border: 240 3.7% 15.9%;
     --input: 240 3.7% 15.9%;
-    --ring: 212 100% 50%;
+    --ring: 24 95% 53%;
   }
 }
  
@@ -85,7 +85,7 @@ html.light {
   --popover: 220 25% 99%;
   --popover-foreground: 240 10% 3.9%;
 
-  --primary: 212 100% 50%;
+  --primary: 24 95% 53%;
   --primary-foreground: 0 0% 98%;
 
   --secondary: 220 15% 95%;
@@ -94,7 +94,7 @@ html.light {
   --muted: 220 15% 95%;
   --muted-foreground: 240 5% 64.9%;
 
-  --accent: 212 100% 50%;
+  --accent: 24 95% 53%;
   --accent-foreground: 0 0% 98%;
 
   --destructive: 0 84.2% 60.2%;
@@ -102,5 +102,5 @@ html.light {
 
   --border: 220 15% 92%;
   --input: 220 15% 92%;
-  --ring: 212 100% 50%;
+  --ring: 24 95% 53%;
 }
