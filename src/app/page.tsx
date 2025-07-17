@@ -1,31 +1,13 @@
 import Link from 'next/link';
 import Image from 'next/image';
-import { getTrending, getPopular } from '@/lib/tmdb';
-import MovieCarousel from '@/components/MovieCarousel';
+import { getTrending } from '@/lib/tmdb';
 import { Button } from '@/components/ui/button';
 import { PlayCircle } from 'lucide-react';
-import { CarouselItem } from '@/types';
 import GenreTabs from '@/components/GenreTabs';
-
-function transformToCarouselItems(
-  results: any[],
-  mediaType: 'movie' | 'tv'
-): CarouselItem[] {
-  return results.map((item) => ({
-    id: item.id,
-    title: item.title || item.name,
-    poster_path: item.poster_path,
-    media_type: mediaType,
-    release_date: item.release_date || item.first_air_date,
-  }));
-}
+import WatchlistCarousel from '@/components/WatchlistCarousel';
 
 export default async function Home() {
   const trendingMovies = await getTrending('movie');
-  const popularMovies = await getPopular('movie');
-  const trendingTv = await getTrending('tv');
-  const popularTv = await getPopular('tv');
-
   const heroItem = trendingMovies.results[0];
 
   return (
@@ -56,27 +38,9 @@ export default async function Home() {
         </div>
       )}
 
-      <div className="container py-12">
+      <div className="container py-12 space-y-12">
+        <WatchlistCarousel />
         <GenreTabs />
-      </div>
-
-       <div className="container space-y-12 pb-12">
-        <MovieCarousel
-          title="Trending Movies"
-          items={transformToCarouselItems(trendingMovies.results, 'movie')}
-        />
-        <MovieCarousel
-          title="Popular Movies"
-          items={transformToCarouselItems(popularMovies.results, 'movie')}
-        />
-        <MovieCarousel
-          title="Trending TV Shows"
-          items={transformToCarouselItems(trendingTv.results, 'tv')}
-        />
-        <MovieCarousel
-          title="Popular TV Shows"
-          items={transformToCarouselItems(popularTv.results, 'tv')}
-        />
       </div>
     </div>
   );
