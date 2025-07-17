@@ -1,3 +1,4 @@
+
 'use client';
 
 import Link from 'next/link';
@@ -6,6 +7,7 @@ import Search from './Search';
 import { usePathname } from 'next/navigation';
 import { cn } from '@/lib/utils';
 import SurpriseMe from './SurpriseMe';
+import GenreDropdown from './GenreDropdown';
 
 export default function Header() {
   const pathname = usePathname();
@@ -37,6 +39,8 @@ export default function Header() {
               {link.label}
             </Link>
           ))}
+          <GenreDropdown media_type="movie" />
+          <GenreDropdown media_type="tv" />
         </nav>
         <div className="flex flex-1 items-center justify-end space-x-4">
           <Search />
