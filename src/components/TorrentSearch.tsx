@@ -1,14 +1,8 @@
 'use client';
 
 import { useTorrentSettings } from '@/contexts/TorrentSettingsContext';
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from '@/components/ui/dropdown-menu';
 import { Button } from './ui/button';
-import { Download, ExternalLink } from 'lucide-react';
+import { ExternalLink } from 'lucide-react';
 
 interface TorrentSearchProps {
   title: string;
@@ -29,28 +23,19 @@ export default function TorrentSearch({ title, year }: TorrentSearchProps) {
   };
 
   return (
-    <DropdownMenu>
-      <DropdownMenuTrigger asChild>
-        <Button variant="outline">
-          <Download className="mr-2 h-4 w-4" />
-          Search Torrents
+    <>
+      {sites.map((site) => (
+        <Button asChild key={site.id} variant="outline">
+          <a
+            href={generateSearchUrl(site.urlTemplate)}
+            target="_blank"
+            rel="noopener noreferrer"
+          >
+            {site.name}
+            <ExternalLink className="ml-2 h-4 w-4" />
+          </a>
         </Button>
-      </DropdownMenuTrigger>
-      <DropdownMenuContent>
-        {sites.map((site) => (
-          <DropdownMenuItem key={site.id} asChild>
-            <a
-              href={generateSearchUrl(site.urlTemplate)}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="flex justify-between w-full"
-            >
-              <span>{site.name}</span>
-              <ExternalLink className="h-4 w-4" />
-            </a>
-          </DropdownMenuItem>
-        ))}
-      </DropdownMenuContent>
-    </DropdownMenu>
+      ))}
+    </>
   );
 }
