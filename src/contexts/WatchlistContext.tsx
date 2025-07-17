@@ -8,59 +8,87 @@ import {
   ReactNode,
 } from 'react';
 import { CarouselItem } from '@/types';
+import { useAuth } from './AuthContext';
+import {
+  getFirestore,
+  doc,
+  getDoc,
+  setDoc,
+  arrayUnion,
+  arrayRemove,
+  onSnapshot,
+} from 'firebase/firestore';
+import { firebaseApp } from '@/lib/firebase';
 
 interface WatchlistContextType {
   watchlist: CarouselItem[];
   addItem: (item: CarouselItem) => void;
   removeItem: (id: number, media_type: 'movie' | 'tv') => void;
+  loading: boolean;
 }
 
 const WatchlistContext = createContext<WatchlistContextType | undefined>(
   undefined
 );
 
+const db = getFirestore(firebaseApp);
+
 export function WatchlistProvider({ children }: { children: ReactNode }) {
+  const { user } = useAuth();
   const [watchlist, setWatchlist] = useState<CarouselItem[]>([]);
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    try {
-      const storedWatchlist = localStorage.getItem('watchlist');
-      if (storedWatchlist) {
-        setWatchlist(JSON.parse(storedWatchlist));
-      }
-    } catch (error) {
-      console.error('Failed to parse watchlist from localStorage', error);
+    let unsubscribe: () => void = () => {};
+    if (user) {
+      setLoading(true);
+      const docRef = doc(db, 'watchlists', user.uid);
+      unsubscribe = onSnapshot(
+        docRef,
+        (docSnap) => {
+          if (docSnap.exists()) {
+            setWatchlist(docSnap.data().items || []);
+          } else {
+            setWatchlist([]);
+          }
+          setLoading(false);
+        },
+        (error) => {
+          console.error("Error fetching watchlist:", error);
+          setLoading(false);
+        }
+      );
+    } else {
       setWatchlist([]);
+      setLoading(false);
     }
-  }, []);
 
-  const updateWatchlist = (newWatchlist: CarouselItem[]) => {
-    setWatchlist(newWatchlist);
-    try {
-      localStorage.setItem('watchlist', JSON.stringify(newWatchlist));
-    } catch (error) {
-      console.error('Failed to save watchlist to localStorage', error);
-    }
+    return () => unsubscribe();
+  }, [user]);
+
+  const addItem = async (item: CarouselItem) => {
+    if (!user) return;
+    const docRef = doc(db, 'watchlists', user.uid);
+    await setDoc(docRef, { items: arrayUnion(item) }, { merge: true });
   };
 
-  const addItem = (item: CarouselItem) => {
-    const itemExists = watchlist.some(
-      (i) => i.id === item.id && i.media_type === item.media_type
+  const removeItem = async (id: number, media_type: 'movie' | 'tv') => {
+    if (!user) return;
+    const docRef = doc(db, 'watchlists', user.uid);
+    const itemToRemove = watchlist.find(
+      (item) => item.id === id && item.media_type === media_type
     );
-    if (!itemExists) {
-      updateWatchlist([...watchlist, item]);
+    if (itemToRemove) {
+      await setDoc(
+        docRef,
+        { items: arrayRemove(itemToRemove) },
+        { merge: true }
+      );
     }
-  };
-
-  const removeItem = (id: number, media_type: 'movie' | 'tv') => {
-    const newWatchlist = watchlist.filter(
-      (item) => !(item.id === id && item.media_type === media_type)
-    );
-    updateWatchlist(newWatchlist);
   };
 
   return (
-    <WatchlistContext.Provider value={{ watchlist, addItem, removeItem }}>
+    <WatchlistContext.Provider value={{ watchlist, addItem, removeItem, loading }}>
       {children}
     </WatchlistContext.Provider>
   );
