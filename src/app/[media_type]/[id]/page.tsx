@@ -27,7 +27,7 @@ export default async function DetailPage({
 
   const title = isMovie ? item.title : show.name;
   const releaseDate = isMovie ? item.release_date : show.first_air_date;
-  const year = releaseDate ? new Date(releaseDate).getFullYear() : 'N/A';
+  const year = releaseDate ? new Date(releaseDate).getFullYear() : '';
   
   const externalLinks = [
     data.external_ids?.imdb_id && {
@@ -92,7 +92,7 @@ export default async function DetailPage({
                 </div>
                 <div className="flex items-center gap-2">
                     <Calendar className="h-4 w-4" />
-                    <span>{year}</span>
+                    <span>{year || 'N/A'}</span>
                 </div>
                 <div className="flex items-center gap-2">
                     <Star className="h-4 w-4 text-yellow-400" />

@@ -6,6 +6,8 @@ import { useTorrentSettings } from '@/contexts/TorrentSettingsContext';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Checkbox } from '@/components/ui/checkbox';
+import { Label } from '@/components/ui/label';
 import {
   PlusCircle,
   Trash2,
@@ -18,6 +20,7 @@ import { useState, useMemo } from 'react';
 function SearchGenerator() {
   const searchParams = useSearchParams();
   const title = searchParams.get('title') || '';
+  const year = searchParams.get('year') || '';
 
   const {
     sites,
@@ -36,6 +39,7 @@ function SearchGenerator() {
   const [generatedUrls, setGeneratedUrls] = useState<
     { name: string; url: string }[]
   >([]);
+  const [includeYear, setIncludeYear] = useState(true);
 
   const defaultKeywords = useMemo(() => [
     'HD', '720p', '1080p', '2160p', 'HEVC', 'DV', 'HDR', '4k',
@@ -86,13 +90,17 @@ function SearchGenerator() {
     }
 
     const keywordString = Array.from(selectedKeywords).join(' ');
-    const searchQuery = `${title} ${keywordString}`
-      .trim()
-      .replace(/\s+/g, ' ');
+    let searchQuery = `${title}`;
+    if (includeYear && year) {
+      searchQuery += ` ${year}`;
+    }
+    searchQuery += ` ${keywordString}`;
+
+    const finalQuery = searchQuery.trim().replace(/\s+/g, ' ');
 
     const urls = selectedSitesData.map((site) => ({
       name: site.name,
-      url: site.urlTemplate.replace('{query}', encodeURIComponent(searchQuery)),
+      url: site.urlTemplate.replace('{query}', encodeURIComponent(finalQuery)),
     }));
     setGeneratedUrls(urls);
   };
@@ -119,6 +127,20 @@ function SearchGenerator() {
             </div>
           </div>
 
+          <div>
+            <div className="flex items-center space-x-2 mb-4">
+              <Checkbox
+                id="include-year"
+                checked={includeYear}
+                onCheckedChange={(checked) => setIncludeYear(!!checked)}
+                disabled={!year}
+              />
+              <Label htmlFor="include-year">
+                Include year ({year || 'N/A'}) in search
+              </Label>
+            </div>
+          </div>
+          
           <div>
             <h3 className="font-semibold mb-2">Custom Words</h3>
             <div className="flex gap-2 mb-4">
@@ -154,7 +176,10 @@ function SearchGenerator() {
                   <button
                     onClick={(e) => {
                       e.stopPropagation();
-                      removeKeyword(keywords.find(k => k.value === keyword)?.id || '');
+                      const keywordToRemove = keywords.find(k => k.value === keyword);
+                      if (keywordToRemove) {
+                         removeKeyword(keywordToRemove.id);
+                      }
                     }}
                     className="hover:text-destructive"
                   >
