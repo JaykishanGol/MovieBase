@@ -76,31 +76,31 @@
 }
 
 html.light {
-  --background: 0 0% 98%; /* #fafafa */
-  --foreground: 240 10% 3.9%; /* #0a0a0a */
+  --background: 220 25% 97%;
+  --foreground: 240 10% 3.9%;
 
-  --card: 0 0% 100%; /* #ffffff */
+  --card: 220 25% 99%;
   --card-foreground: 240 10% 3.9%;
 
-  --popover: 0 0% 100%;
+  --popover: 220 25% 99%;
   --popover-foreground: 240 10% 3.9%;
 
-  --primary: 212 100% 50%; /* #007AFF */
+  --primary: 212 100% 50%;
   --primary-foreground: 0 0% 98%;
 
-  --secondary: 0 0% 96.1%;
+  --secondary: 220 15% 95%;
   --secondary-foreground: 240 10% 3.9%;
 
-  --muted: 0 0% 96.1%;
+  --muted: 220 15% 95%;
   --muted-foreground: 240 5% 64.9%;
 
-  --accent: 212 100% 50%; /* #007AFF */
+  --accent: 212 100% 50%;
   --accent-foreground: 0 0% 98%;
 
   --destructive: 0 84.2% 60.2%;
   --destructive-foreground: 0 0% 98%;
 
-  --border: 0 0% 89.8%;
-  --input: 0 0% 89.8%;
+  --border: 220 15% 92%;
+  --input: 220 15% 92%;
   --ring: 212 100% 50%;
 }
