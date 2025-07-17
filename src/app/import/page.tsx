@@ -32,8 +32,8 @@ export default function ImportWatchlistPage() {
             const parsedJson = JSON.parse(jsonInput);
             if (parsedJson.items && Array.isArray(parsedJson.items)) {
                  titles = parsedJson.items.filter((item: any) => item && typeof item.title === 'string');
-            } else if (Array.isArray(parsedJson) && parsedJson.every(item => typeof item.title === 'string')) {
-                titles = parsedJson;
+            } else if (Array.isArray(parsedJson) && parsedJson.every(item => item && typeof item.title === 'string')) {
+                titles = parsedJson.filter((item: any) => item && typeof item.title === 'string');
             } else {
                 throw new Error('Invalid JSON format. Expected an object with an "items" array, or an array of objects with a "title" property.');
             }
@@ -51,11 +51,12 @@ export default function ImportWatchlistPage() {
 
         for (const item of titles) {
             try {
-                // Skip if already in watchlist
+                // Skip if title already in watchlist to avoid redundant searches
                 if (watchlist.some(watchlistItem => watchlistItem.title.toLowerCase() === item.title.toLowerCase())) {
                     continue;
                 }
                 
+                // Don't process items with title 'Unknown Item' from Google's export
                 if (item.title === 'Unknown Item') {
                     continue;
                 }
@@ -66,8 +67,8 @@ export default function ImportWatchlistPage() {
                 );
 
                 if (match) {
-                    // Second check to prevent adding duplicates by ID
-                    if (watchlist.some(watchlistItem => watchlistItem.id === match.id)) {
+                    // Final check in watchlist by ID and media_type before adding
+                    if (watchlist.some(watchlistItem => watchlistItem.id === match.id && watchlistItem.media_type === match.media_type)) {
                         continue;
                     }
 
@@ -105,7 +106,7 @@ export default function ImportWatchlistPage() {
                 <CardHeader>
                     <CardTitle>Import Google Watchlist</CardTitle>
                     <CardDescription>
-                        Paste the content of your Google Watchlist JSON file here. The expected format is an object with an "items" array, like: {"{ \"items\": [{\"title\": \"Movie Title\"}] }"}
+                        Paste the content of your Google Watchlist JSON file here. It supports an object with an "items" array (e.g., {"{ \"items\": [{\"title\": \"Movie Title\"}] }"}) or a direct array of items (e.g., [{"{ \"title\": \"Movie Title\" }"}]) .
                     </CardDescription>
                 </CardHeader>
                 <CardContent className="space-y-4">
