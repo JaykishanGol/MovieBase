@@ -1,22 +1,13 @@
 'use client';
 
-import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
-import { Trash2 } from 'lucide-react';
-import { useTorrentSettings } from '@/contexts/TorrentSettingsContext';
 import { Checkbox } from '@/components/ui/checkbox';
-import { Label } from './ui/label';
+import { Label } from '@/components/ui/label';
+import { useTorrentSettings } from '@/contexts/TorrentSettingsContext';
+import { Trash2 } from 'lucide-react';
 
 export default function TorrentKeywords() {
-  const {
-    keywords,
-    removeKeyword,
-    toggleKeyword,
-    season,
-    setSeason,
-    episode,
-    setEpisode,
-  } = useTorrentSettings();
+  const { keywords, removeKeyword, toggleKeyword } = useTorrentSettings();
 
   return (
     <div className="mt-8">
@@ -35,39 +26,12 @@ export default function TorrentKeywords() {
                     checked={keyword.enabled}
                     onCheckedChange={() => toggleKeyword(keyword.id)}
                   />
-                  {keyword.value === 'S' ? (
-                    <div className="flex items-center gap-2">
-                      <Label htmlFor={`keyword-${keyword.id}`} className="font-medium cursor-pointer">
-                        Season
-                      </Label>
-                      <Input
-                        type="number"
-                        id="season-input"
-                        value={season}
-                        onChange={(e) => setSeason(parseInt(e.target.value, 10) || 1)}
-                        className="w-20 h-8"
-                        min="1"
-                      />
-                    </div>
-                  ) : keyword.value === 'E' ? (
-                    <div className="flex items-center gap-2">
-                      <Label htmlFor={`keyword-${keyword.id}`} className="font-medium cursor-pointer">
-                        Episode
-                      </Label>
-                      <Input
-                        type="number"
-                        id="episode-input"
-                        value={episode}
-                        onChange={(e) => setEpisode(parseInt(e.target.value, 10) || 1)}
-                        className="w-20 h-8"
-                        min="1"
-                      />
-                    </div>
-                  ) : (
-                    <label htmlFor={`keyword-${keyword.id}`} className="font-medium cursor-pointer">
-                      {keyword.value}
-                    </label>
-                  )}
+                  <Label
+                    htmlFor={`keyword-${keyword.id}`}
+                    className="font-medium cursor-pointer"
+                  >
+                    {keyword.value}
+                  </Label>
                 </div>
                 <Button
                   variant="ghost"

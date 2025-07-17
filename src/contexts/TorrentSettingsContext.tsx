@@ -28,10 +28,6 @@ interface TorrentSettingsContextType {
   addKeyword: (value: string) => void;
   removeKeyword: (id: string) => void;
   toggleKeyword: (id: string) => void;
-  season: number;
-  setSeason: (season: number) => void;
-  episode: number;
-  setEpisode: (episode: number) => void;
 }
 
 const SITES_KEY = 'torrent_sites';
@@ -44,8 +40,16 @@ const DEFAULT_SITES: TorrentSite[] = [
 const DEFAULT_KEYWORDS: TorrentKeyword[] = [
   { id: 'kw1', value: '2160p', enabled: true },
   { id: 'kw2', value: 'HDR', enabled: true },
-  { id: 'kw3', value: 'S', enabled: false },
-  { id: 'kw7', value: 'E', enabled: false },
+  { id: 's01', value: 'S01', enabled: false },
+  { id: 's02', value: 'S02', enabled: false },
+  { id: 's03', value: 'S03', enabled: false },
+  { id: 's04', value: 'S04', enabled: false },
+  { id: 's05', value: 'S05', enabled: false },
+  { id: 'e01', value: 'E01', enabled: false },
+  { id: 'e02', value: 'E02', enabled: false },
+  { id: 'e03', value: 'E03', enabled: false },
+  { id: 'e04', value: 'E04', enabled: false },
+  { id: 'e05', value: 'E05', enabled: false },
 ]
 
 const TorrentSettingsContext = createContext<
@@ -55,8 +59,6 @@ const TorrentSettingsContext = createContext<
 export function TorrentSettingsProvider({ children }: { children: ReactNode }) {
   const [sites, setSites] = useState<TorrentSite[]>([]);
   const [keywords, setKeywords] = useState<TorrentKeyword[]>([]);
-  const [season, setSeason] = useState(1);
-  const [episode, setEpisode] = useState(1);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -128,10 +130,6 @@ export function TorrentSettingsProvider({ children }: { children: ReactNode }) {
         addKeyword,
         removeKeyword,
         toggleKeyword,
-        season,
-        setSeason,
-        episode,
-        setEpisode,
       }}
     >
       {children}
