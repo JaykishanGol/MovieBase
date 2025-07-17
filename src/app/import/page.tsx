@@ -29,9 +29,51 @@ function cleanJsonString(jsonString: string): string {
         .trim();
 }
 
+function parseCsv(csvString: string): { title: string }[] {
+    const titles: { title: string }[] = [];
+    const lines = csvString.split('\n');
+
+    // Skip header and potential empty lines at the start
+    let lineIndex = 0;
+    while(lineIndex < lines.length && !lines[lineIndex].toLowerCase().includes('title,')) {
+        lineIndex++;
+    }
+    // Skip the header line itself
+    if (lineIndex < lines.length) {
+        lineIndex++;
+    }
+
+    for (; lineIndex < lines.length; lineIndex++) {
+        const line = lines[lineIndex].trim();
+        if (!line) continue;
+
+        let title;
+        if (line.startsWith('"')) {
+            // Handle quoted titles
+            const closingQuoteIndex = line.indexOf('"', 1);
+            if (closingQuoteIndex > 0) {
+                title = line.substring(1, closingQuoteIndex);
+            }
+        } else {
+            // Handle unquoted titles
+            const commaIndex = line.indexOf(',');
+            if (commaIndex !== -1) {
+                title = line.substring(0, commaIndex);
+            } else {
+                title = line; // Assume the whole line is the title if no comma
+            }
+        }
+
+        if (title) {
+            titles.push({ title: title.trim() });
+        }
+    }
+    return titles;
+}
+
 
 export default function ImportWatchlistPage() {
-    const [jsonInput, setJsonInput] = useState('');
+    const [textInput, setTextInput] = useState('');
     const [isProcessing, setIsProcessing] = useState(false);
     const [importResult, setImportResult] = useState<ImportResult | null>(null);
     const { addItems, watchlist } = useWatchlist();
@@ -42,22 +84,33 @@ export default function ImportWatchlistPage() {
         setImportResult(null);
 
         let titles: { title: string }[] = [];
-        try {
-            const cleanedJsonInput = cleanJsonString(jsonInput);
-            const parsedJson = JSON.parse(cleanedJsonInput);
+        const trimmedInput = textInput.trim();
 
-            if (parsedJson.items && Array.isArray(parsedJson.items)) {
-                 titles = parsedJson.items.filter((item: any) => item && typeof item.title === 'string');
-            } else if (Array.isArray(parsedJson)) {
-                titles = parsedJson.filter((item: any) => item && typeof item.title === 'string');
+        try {
+            if (trimmedInput.startsWith('{') || trimmedInput.startsWith('[')) {
+                // Assume JSON
+                const cleanedJsonInput = cleanJsonString(trimmedInput);
+                const parsedJson = JSON.parse(cleanedJsonInput);
+
+                if (parsedJson.items && Array.isArray(parsedJson.items)) {
+                     titles = parsedJson.items.filter((item: any) => item && typeof item.title === 'string');
+                } else if (Array.isArray(parsedJson)) {
+                    titles = parsedJson.filter((item: any) => item && typeof item.title === 'string');
+                } else {
+                    throw new Error('Invalid JSON format. Expected an object with an "items" array, or an array of objects with a "title" property.');
+                }
             } else {
-                throw new Error('Invalid JSON format. Expected an object with an "items" array, or an array of objects with a "title" property.');
+                // Assume CSV
+                titles = parseCsv(trimmedInput);
+                if (titles.length === 0) {
+                    throw new Error('Could not parse any titles from the CSV data. Please check the format.');
+                }
             }
         } catch (error) {
             toast({
                 variant: 'destructive',
-                title: 'Invalid JSON',
-                description: 'Please check the format of your JSON file. ' + (error as Error).message,
+                title: 'Invalid Input',
+                description: 'Please check the format of your data. ' + (error as Error).message,
             });
             setIsProcessing(false);
             return;
@@ -128,20 +181,20 @@ export default function ImportWatchlistPage() {
         <div className="container py-8">
             <Card>
                 <CardHeader>
-                    <CardTitle>Import Google Watchlist</CardTitle>
+                    <CardTitle>Import Watchlist</CardTitle>
                     <CardDescription>
-                        Paste the content of your Google Watchlist JSON file here. It supports an object with an "items" array (e.g., {"{ \"items\": [{\"title\": \"Movie Title\"}] }"}) or a direct array of items (e.g., [{"{ \"title\": \"Movie Title\" }"}]) . The importer will attempt to clean up minor syntax errors.
+                        Paste the content of your Google Watchlist JSON or CSV file here. The page will automatically detect the format.
                     </CardDescription>
                 </CardHeader>
                 <CardContent className="space-y-4">
                     <Textarea
-                        placeholder='{ "items": [{ "title": "The Matrix" }, { "title": "Breaking Bad" }] }'
-                        value={jsonInput}
-                        onChange={(e) => setJsonInput(e.target.value)}
+                        placeholder='Paste JSON or CSV content here...'
+                        value={textInput}
+                        onChange={(e) => setTextInput(e.target.value)}
                         className="min-h-[200px] font-mono"
                         disabled={isProcessing}
                     />
-                    <Button onClick={handleImport} disabled={isProcessing || !jsonInput}>
+                    <Button onClick={handleImport} disabled={isProcessing || !textInput}>
                         {isProcessing ? (
                             <>
                                 <Loader2 className="mr-2 h-4 w-4 animate-spin" />
