@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, Suspense } from 'react';
+import { useState, useEffect, use } from 'react';
 import { getGenres, discoverMedia } from '@/lib/tmdb';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import MovieCarousel from './MovieCarousel';
@@ -25,15 +25,13 @@ function transformToCarouselItems(
   }));
 }
 
-
 const GenreCarouselLoader = () => (
     <div className="flex items-center justify-center h-80 w-full bg-card rounded-lg">
         <Loader2 className="h-8 w-8 animate-spin" />
     </div>
 );
 
-
-function GenreCarousels({ genreId }: { genreId: string | null }) {
+function GenreCarousels({ genreId }: { genreId: string }) {
   const [movieItems, setMovieItems] = useState<CarouselItemType[]>([]);
   const [tvItems, setTvItems] = useState<CarouselItemType[]>([]);
   const [loading, setLoading] = useState(true);
@@ -43,13 +41,20 @@ function GenreCarousels({ genreId }: { genreId: string | null }) {
 
     const fetchMedia = async () => {
       setLoading(true);
-      const [movieRes, tvRes] = await Promise.all([
-        discoverMedia('movie', genreId),
-        discoverMedia('tv', genreId),
-      ]);
-      setMovieItems(transformToCarouselItems(movieRes.results, 'movie'));
-      setTvItems(transformToCarouselItems(tvRes.results, 'tv'));
-      setLoading(false);
+      try {
+        const [movieRes, tvRes] = await Promise.all([
+          discoverMedia('movie', genreId),
+          discoverMedia('tv', genreId),
+        ]);
+        setMovieItems(transformToCarouselItems(movieRes.results, 'movie'));
+        setTvItems(transformToCarouselItems(tvRes.results, 'tv'));
+      } catch (error) {
+        console.error("Failed to fetch media for genre:", error);
+        setMovieItems([]);
+        setTvItems([]);
+      } finally {
+        setLoading(false);
+      }
     };
 
     fetchMedia();
@@ -61,8 +66,8 @@ function GenreCarousels({ genreId }: { genreId: string | null }) {
 
   return (
     <div className="space-y-12">
-      <MovieCarousel title="Movies" items={movieItems} />
-      <MovieCarousel title="TV Shows" items={tvItems} />
+      {movieItems.length > 0 && <MovieCarousel title="Movies" items={movieItems} />}
+      {tvItems.length > 0 && <MovieCarousel title="TV Shows" items={tvItems} />}
     </div>
   );
 }
@@ -71,22 +76,30 @@ function GenreCarousels({ genreId }: { genreId: string | null }) {
 export default function GenreTabs() {
   const [genres, setGenres] = useState<Genre[]>([]);
   const [selectedGenre, setSelectedGenre] = useState<string | null>(null);
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     const fetchGenres = async () => {
-      const { genres: movieGenres } = await getGenres('movie');
-      // Using movie genres as they are more comprehensive
-      setGenres(movieGenres);
-      if (movieGenres.length > 0) {
-        setSelectedGenre(String(movieGenres[0].id));
+      setLoading(true);
+      try {
+        const { genres: movieGenres } = await getGenres('movie');
+        // Using movie genres as they are more comprehensive
+        setGenres(movieGenres);
+        if (movieGenres.length > 0) {
+          setSelectedGenre(String(movieGenres[0].id));
+        }
+      } catch (error) {
+        console.error("Failed to fetch genres:", error);
+        setGenres([]);
       }
+      setLoading(false);
     };
     fetchGenres();
   }, []);
 
-  if (genres.length === 0) {
+  if (loading || genres.length === 0) {
     return (
-        <div className="flex items-center justify-center h-20 w-full">
+        <div className="flex items-center justify-center h-96 w-full">
             <Loader2 className="h-8 w-8 animate-spin" />
         </div>
     );
@@ -94,20 +107,20 @@ export default function GenreTabs() {
 
   return (
     <Tabs value={selectedGenre ?? ''} onValueChange={setSelectedGenre} className="w-full">
-      <TabsList className="flex-wrap h-auto">
+      <TabsList className="flex-wrap h-auto justify-start">
         {genres.map((genre) => (
           <TabsTrigger key={genre.id} value={String(genre.id)}>
             {genre.name}
           </TabsTrigger>
         ))}
       </TabsList>
-      {genres.map((genre) => (
-        <TabsContent key={genre.id} value={String(genre.id)} className="mt-6">
-          <Suspense fallback={<GenreCarouselLoader />}>
-            <GenreCarousels genreId={String(genre.id)} />
-          </Suspense>
+      
+      {selectedGenre && (
+        <TabsContent value={selectedGenre} className="mt-6">
+           <GenreCarousels genreId={selectedGenre} />
         </TabsContent>
-      ))}
+      )}
+
     </Tabs>
   );
 }
