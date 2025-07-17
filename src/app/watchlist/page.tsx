@@ -21,7 +21,12 @@ export default function WatchlistPage() {
   return (
     <div className="container py-8">
       <div className="flex justify-between items-center mb-8">
-        <h1 className="text-3xl font-bold font-headline">My Watchlist</h1>
+        <div className="flex items-center gap-4">
+            <h1 className="text-3xl font-bold font-headline">My Watchlist</h1>
+            {watchlist.length > 0 && (
+                <span className="text-lg text-muted-foreground">({watchlist.length} items)</span>
+            )}
+        </div>
         <Button asChild variant="outline">
           <Link href="/import">
             <UploadCloud className="mr-2 h-4 w-4" />
