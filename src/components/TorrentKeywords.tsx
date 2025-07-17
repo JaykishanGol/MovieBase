@@ -6,9 +6,10 @@ import { Label } from '@/components/ui/label';
 import { Button } from '@/components/ui/button';
 import { Trash2, PlusCircle } from 'lucide-react';
 import { useTorrentSettings } from '@/contexts/TorrentSettingsContext';
+import { Checkbox } from '@/components/ui/checkbox';
 
 export default function TorrentKeywords() {
-  const { keywords, addKeyword, removeKeyword } = useTorrentSettings();
+  const { keywords, addKeyword, removeKeyword, toggleKeyword } = useTorrentSettings();
   const [newKeyword, setNewKeyword] = useState('');
 
   const handleAddKeyword = (e: React.FormEvent) => {
@@ -30,7 +31,16 @@ export default function TorrentKeywords() {
                 key={keyword.id}
                 className="flex items-center justify-between p-2 rounded-md bg-muted"
               >
-                <span className="font-medium">{keyword.value}</span>
+                <div className="flex items-center gap-2">
+                    <Checkbox
+                        id={`keyword-${keyword.id}`}
+                        checked={keyword.enabled}
+                        onCheckedChange={() => toggleKeyword(keyword.id)}
+                    />
+                    <label htmlFor={`keyword-${keyword.id}`} className="font-medium cursor-pointer">
+                        {keyword.value}
+                    </label>
+                </div>
                 <Button
                   variant="ghost"
                   size="icon"

@@ -17,8 +17,8 @@ export default function TorrentSearch({ title, year }: TorrentSearchProps) {
   }
 
   const generateSearchUrl = (siteUrlTemplate: string) => {
-    const keywordString = keywords.map(k => k.value).join(' ');
-    const searchQuery = `${title} ${year} ${keywordString}`.trim();
+    const enabledKeywords = keywords.filter(k => k.enabled).map(k => k.value).join(' ');
+    const searchQuery = `${title} ${year} ${enabledKeywords}`.trim().replace(/\s+/g, ' ');
     return siteUrlTemplate.replace('{query}', encodeURIComponent(searchQuery));
   };
 

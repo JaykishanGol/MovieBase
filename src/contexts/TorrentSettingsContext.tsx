@@ -17,6 +17,7 @@ export interface TorrentSite {
 export interface TorrentKeyword {
   id: string;
   value: string;
+  enabled: boolean;
 }
 
 interface TorrentSettingsContextType {
@@ -26,6 +27,7 @@ interface TorrentSettingsContextType {
   keywords: TorrentKeyword[];
   addKeyword: (value: string) => void;
   removeKeyword: (id: string) => void;
+  toggleKeyword: (id: string) => void;
 }
 
 const SITES_KEY = 'torrent_sites';
@@ -50,7 +52,10 @@ export function TorrentSettingsProvider({ children }: { children: ReactNode }) {
       setSites(storedSites ? JSON.parse(storedSites) : DEFAULT_SITES);
       
       const storedKeywords = localStorage.getItem(KEYWORDS_KEY);
-      setKeywords(storedKeywords ? JSON.parse(storedKeywords) : []);
+      const parsedKeywords = storedKeywords ? JSON.parse(storedKeywords) : [];
+      // Ensure all keywords have an 'enabled' property for backwards compatibility
+      setKeywords(parsedKeywords.map((kw: any) => ({ ...kw, enabled: kw.enabled ?? true })));
+
     } catch (error) {
       console.error('Failed to parse torrent settings from localStorage', error);
       setSites(DEFAULT_SITES);
@@ -80,12 +85,17 @@ export function TorrentSettingsProvider({ children }: { children: ReactNode }) {
 
   const addKeyword = (value: string) => {
     if (keywords.some(k => k.value.toLowerCase() === value.toLowerCase())) return;
-    const newKeyword: TorrentKeyword = { id: crypto.randomUUID(), value };
+    const newKeyword: TorrentKeyword = { id: crypto.randomUUID(), value, enabled: true };
     updateKeywordsStorage([...keywords, newKeyword]);
   };
 
   const removeKeyword = (id: string) => {
     updateKeywordsStorage(keywords.filter((keyword) => keyword.id !== id));
+  };
+
+  const toggleKeyword = (id: string) => {
+    const newKeywords = keywords.map(kw => kw.id === id ? { ...kw, enabled: !kw.enabled } : kw);
+    updateKeywordsStorage(newKeywords);
   };
 
   if (loading) {
@@ -101,6 +111,7 @@ export function TorrentSettingsProvider({ children }: { children: ReactNode }) {
         keywords,
         addKeyword,
         removeKeyword,
+        toggleKeyword,
       }}
     >
       {children}
