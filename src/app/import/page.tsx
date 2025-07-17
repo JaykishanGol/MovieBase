@@ -16,6 +16,20 @@ interface ImportResult {
     failed: { title: string }[];
 }
 
+// Function to clean up common JSON errors
+function cleanJsonString(jsonString: string): string {
+    return jsonString
+        // Remove trailing commas from objects
+        .replace(/,\s*}/g, '}')
+        // Remove trailing commas from arrays
+        .replace(/,\s*]/g, ']')
+        // Remove other stray characters that might invalidate JSON (like the user's backslash)
+        .replace(/\\/g, '')
+        // Trim whitespace
+        .trim();
+}
+
+
 export default function ImportWatchlistPage() {
     const [jsonInput, setJsonInput] = useState('');
     const [isProcessing, setIsProcessing] = useState(false);
@@ -29,7 +43,9 @@ export default function ImportWatchlistPage() {
 
         let titles: { title: string }[] = [];
         try {
-            const parsedJson = JSON.parse(jsonInput);
+            const cleanedJsonInput = cleanJsonString(jsonInput);
+            const parsedJson = JSON.parse(cleanedJsonInput);
+
             if (parsedJson.items && Array.isArray(parsedJson.items)) {
                  titles = parsedJson.items.filter((item: any) => item && typeof item.title === 'string');
             } else if (Array.isArray(parsedJson) && parsedJson.every(item => item && typeof item.title === 'string')) {
@@ -41,7 +57,7 @@ export default function ImportWatchlistPage() {
             toast({
                 variant: 'destructive',
                 title: 'Invalid JSON',
-                description: (error as Error).message,
+                description: 'Please check the format of your JSON file. ' + (error as Error).message,
             });
             setIsProcessing(false);
             return;
@@ -101,7 +117,7 @@ export default function ImportWatchlistPage() {
                 <CardHeader>
                     <CardTitle>Import Google Watchlist</CardTitle>
                     <CardDescription>
-                        Paste the content of your Google Watchlist JSON file here. It supports an object with an "items" array (e.g., {"{ \"items\": [{\"title\": \"Movie Title\"}] }"}) or a direct array of items (e.g., [{"{ \"title\": \"Movie Title\" }"}]) .
+                        Paste the content of your Google Watchlist JSON file here. It supports an object with an "items" array (e.g., {"{ \"items\": [{\"title\": \"Movie Title\"}] }"}) or a direct array of items (e.g., [{"{ \"title\": \"Movie Title\" }"}]) . The importer will attempt to clean up minor syntax errors.
                     </CardDescription>
                 </CardHeader>
                 <CardContent className="space-y-4">
