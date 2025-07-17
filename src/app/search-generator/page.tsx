@@ -5,12 +5,11 @@ import { useSearchParams } from 'next/navigation';
 import { useTorrentSettings } from '@/contexts/TorrentSettingsContext';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Label } from '@/components/ui/label';
 import {
   PlusCircle,
-  Trash2,
   X,
   Search as SearchIcon,
   Link as LinkIcon,
@@ -24,8 +23,6 @@ function SearchGenerator() {
 
   const {
     sites,
-    addSite,
-    removeSite,
     keywords,
     addKeyword,
     removeKeyword,
@@ -40,10 +37,6 @@ function SearchGenerator() {
     { name: string; url: string }[]
   >([]);
   const [includeYear, setIncludeYear] = useState(true);
-  
-  const [newSiteName, setNewSiteName] = useState('');
-  const [newSiteUrl, setNewSiteUrl] = useState('');
-
 
   const defaultKeywords = useMemo(() => [
     'HD', '720p', '1080p', '2160p', 'HEVC', 'DV', 'HDR', '4k',
@@ -107,15 +100,6 @@ function SearchGenerator() {
       url: site.urlTemplate.replace('{query}', encodeURIComponent(finalQuery)),
     }));
     setGeneratedUrls(urls);
-  };
-  
-  const handleAddSite = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (newSiteName.trim() && newSiteUrl.trim().includes('{query}')) {
-      addSite(newSiteName.trim(), newSiteUrl.trim());
-      setNewSiteName('');
-      setNewSiteUrl('');
-    }
   };
 
   return (
@@ -227,66 +211,6 @@ function SearchGenerator() {
           )}
         </CardContent>
       </Card>
-      
-      <Card>
-        <CardHeader>
-            <CardTitle>Torrent Site Settings</CardTitle>
-             <CardDescription>
-                Manage your saved torrent sites. These will be available in the Search Generator.
-            </CardDescription>
-        </CardHeader>
-        <CardContent className="space-y-8">
-            <div className="space-y-4">
-                <h3 className="font-semibold">Your Sites</h3>
-                <div className="space-y-2">
-                {sites.map((site) => (
-                    <div
-                    key={site.id}
-                    className="flex items-center justify-between p-2 rounded-md bg-muted"
-                    >
-                    <div className="flex flex-col">
-                        <span className="font-medium">{site.name}</span>
-                        <span className="text-xs text-muted-foreground">{site.urlTemplate}</span>
-                    </div>
-                    <Button
-                        variant="ghost"
-                        size="icon"
-                        onClick={() => removeSite(site.id)}
-                    >
-                        <Trash2 className="h-4 w-4" />
-                    </Button>
-                    </div>
-                ))}
-                </div>
-                <form onSubmit={handleAddSite} className="space-y-3 p-3 border rounded-lg">
-                <h4 className="font-medium text-sm">Add New Site</h4>
-                <div className="space-y-1">
-                    <Label htmlFor="site-name">Site Name</Label>
-                    <Input
-                    id="site-name"
-                    value={newSiteName}
-                    onChange={(e) => setNewSiteName(e.target.value)}
-                    placeholder="e.g., 1337x"
-                    />
-                </div>
-                <div className="space-y-1">
-                    <Label htmlFor="site-url">Search URL Template</Label>
-                    <Input
-                    id="site-url"
-                    value={newSiteUrl}
-                    onChange={(e) => setNewSiteUrl(e.target.value)}
-                    placeholder="e.g., https://1377x.to/search/{query}/1/"
-                    />
-                    <p className="text-xs text-muted-foreground">Use {'{query}'} as a placeholder for the search term.</p>
-                </div>
-                <Button type="submit" className="w-full">
-                    <PlusCircle className="mr-2 h-4 w-4" /> Add Site
-                </Button>
-                </form>
-            </div>
-        </CardContent>
-      </Card>
-
     </div>
   );
 }
