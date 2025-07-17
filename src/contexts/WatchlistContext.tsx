@@ -6,10 +6,8 @@ import {
   useState,
   useEffect,
   ReactNode,
-  useCallback,
 } from 'react';
 import { CarouselItem } from '@/types';
-import { useAuth } from './AuthContext';
 
 interface WatchlistContextType {
   watchlist: CarouselItem[];
@@ -18,23 +16,20 @@ interface WatchlistContextType {
   loading: boolean;
 }
 
+const WATCHLIST_KEY = 'watchlist';
+
 const WatchlistContext = createContext<WatchlistContextType | undefined>(
   undefined
 );
 
 export function WatchlistProvider({ children }: { children: ReactNode }) {
-  const { user } = useAuth();
   const [watchlist, setWatchlist] = useState<CarouselItem[]>([]);
   const [loading, setLoading] = useState(true);
-
-  const getWatchlistKey = useCallback(() => {
-    return user ? `watchlist_${user.uid}` : 'watchlist_guest';
-  }, [user]);
 
   useEffect(() => {
     setLoading(true);
     try {
-      const storedWatchlist = localStorage.getItem(getWatchlistKey());
+      const storedWatchlist = localStorage.getItem(WATCHLIST_KEY);
       if (storedWatchlist) {
         setWatchlist(JSON.parse(storedWatchlist));
       } else {
@@ -45,10 +40,10 @@ export function WatchlistProvider({ children }: { children: ReactNode }) {
       setWatchlist([]);
     }
     setLoading(false);
-  }, [user, getWatchlistKey]);
+  }, []);
 
   const updateLocalStorage = (newWatchlist: CarouselItem[]) => {
-     localStorage.setItem(getWatchlistKey(), JSON.stringify(newWatchlist));
+     localStorage.setItem(WATCHLIST_KEY, JSON.stringify(newWatchlist));
   }
 
   const addItem = (item: CarouselItem) => {
