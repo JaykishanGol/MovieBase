@@ -79,7 +79,6 @@ function SearchGenerator() {
   };
 
   const handleGenerateUrls = () => {
-    const year = searchParams.get('year') || '';
     const selectedSitesData = sites.filter((site) => selectedSites.has(site.id));
     if (!title || selectedSitesData.length === 0) {
       setGeneratedUrls([]);
@@ -87,7 +86,7 @@ function SearchGenerator() {
     }
 
     const keywordString = Array.from(selectedKeywords).join(' ');
-    const searchQuery = `${title} ${year} ${keywordString}`
+    const searchQuery = `${title} ${keywordString}`
       .trim()
       .replace(/\s+/g, ' ');
 
