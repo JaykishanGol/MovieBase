@@ -7,6 +7,7 @@ import { notFound } from 'next/navigation';
 import { Movie, TVShow } from '@/types';
 import { Button } from '@/components/ui/button';
 import TorrentSearch from '@/components/TorrentSearch';
+import TorrentSettings from '@/components/TorrentSettings';
 
 export default async function DetailPage({
   params,
@@ -116,7 +117,7 @@ export default async function DetailPage({
 
             <div className="mt-8">
               <h3 className="text-lg font-semibold mb-2">External Links</h3>
-              <div className="flex flex-wrap gap-4">
+              <div className="flex flex-wrap gap-4 items-center">
                 {externalLinks.map(link => link && (
                   <Button asChild key={link.name} variant="outline">
                     <a href={link.url} target="_blank" rel="noopener noreferrer">
@@ -125,6 +126,7 @@ export default async function DetailPage({
                   </Button>
                 ))}
                 <TorrentSearch title={title} year={year} />
+                <TorrentSettings />
               </div>
             </div>
 
