@@ -48,7 +48,7 @@ export default function ImportWatchlistPage() {
 
             if (parsedJson.items && Array.isArray(parsedJson.items)) {
                  titles = parsedJson.items.filter((item: any) => item && typeof item.title === 'string');
-            } else if (Array.isArray(parsedJson) && parsedJson.every(item => item && typeof item.title === 'string')) {
+            } else if (Array.isArray(parsedJson)) {
                 titles = parsedJson.filter((item: any) => item && typeof item.title === 'string');
             } else {
                 throw new Error('Invalid JSON format. Expected an object with an "items" array, or an array of objects with a "title" property.');
@@ -64,45 +64,47 @@ export default function ImportWatchlistPage() {
         }
 
         const results: ImportResult = { successful: [], failed: [] };
+        const itemsToImport = titles.filter(item => item.title !== 'Unknown Item');
 
-        for (const item of titles) {
-            try {
-                // Don't process items with title 'Unknown Item' from Google's export
-                if (item.title === 'Unknown Item') {
-                    continue;
-                }
+        const searchPromises = itemsToImport.map(item => 
+            search(item.title)
+                .then(searchResults => ({ title: item.title, searchResults }))
+                .catch(error => ({ title: item.title, error }))
+        );
+        
+        const settledResults = await Promise.all(searchPromises);
 
-                const searchResults = await search(item.title);
-                const match = searchResults.results.find(
-                    (r: SearchResult) => (r.media_type === 'movie' || r.media_type === 'tv') && r.poster_path
-                );
-
-                if (match) {
-                    // Final check in watchlist by ID and media_type before adding
-                    if (watchlist.some(watchlistItem => watchlistItem.id === match.id && watchlistItem.media_type === match.media_type)) {
-                        continue;
-                    }
-
-                    const newItem: CarouselItem = {
-                        id: match.id,
-                        title: match.title || match.name || '',
-                        media_type: match.media_type as 'movie' | 'tv',
-                        poster_path: match.poster_path,
-                        release_date: match.release_date || match.first_air_date || '',
-                    };
-                    addItem(newItem);
-                    results.successful.push({ title: item.title, importedTitle: newItem.title });
-                } else {
-                    results.failed.push({ title: item.title });
-                }
-            } catch (error) {
-                console.error(`Failed to process ${item.title}`, error);
-                results.failed.push({ title: item.title });
+        for (const result of settledResults) {
+            const { title, searchResults, error } = result;
+            if (error || !searchResults) {
+                console.error(`Failed to process ${title}`, error);
+                results.failed.push({ title });
+                continue;
             }
-             // Add a small delay to avoid hitting API rate limits
-            await new Promise(resolve => setTimeout(resolve, 200));
-        }
 
+            const match = searchResults.results.find(
+                (r: SearchResult) => (r.media_type === 'movie' || r.media_type === 'tv') && r.poster_path
+            );
+
+            if (match) {
+                if (watchlist.some(watchlistItem => watchlistItem.id === match.id && watchlistItem.media_type === match.media_type)) {
+                    continue; // Already in watchlist
+                }
+
+                const newItem: CarouselItem = {
+                    id: match.id,
+                    title: match.title || match.name || '',
+                    media_type: match.media_type as 'movie' | 'tv',
+                    poster_path: match.poster_path,
+                    release_date: match.release_date || match.first_air_date || '',
+                };
+                addItem(newItem);
+                results.successful.push({ title, importedTitle: newItem.title });
+            } else {
+                results.failed.push({ title });
+            }
+        }
+        
         setImportResult(results);
         toast({
             title: 'Import Complete',
