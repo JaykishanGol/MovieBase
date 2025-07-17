@@ -41,3 +41,13 @@ export async function discoverMedia(media_type: 'movie' | 'tv', genreId: string,
   const endpoint = `/discover/${media_type}?with_genres=${genreId}&page=${page}&sort_by=popularity.desc`;
   return fetchFromTMDB(endpoint);
 }
+
+export async function getCertifiedMovies(page: number = 1) {
+  const endpoint = `/discover/movie?vote_average.gte=7.5&vote_count.gte=500&page=${page}&sort_by=popularity.desc`;
+  return fetchFromTMDB(endpoint);
+}
+
+export async function getCertifiedTvShows(page: number = 1) {
+  const endpoint = `/discover/tv?vote_average.gte=7.5&vote_count.gte=500&page=${page}&sort_by=popularity.desc`;
+  return fetchFromTMDB(endpoint);
+}
