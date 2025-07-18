@@ -90,7 +90,6 @@ export default function WatchlistButton({ item }: WatchlistButtonProps) {
             <Button
               variant="ghost"
               size="icon"
-              onClick={(e) => { e.preventDefault(); e.stopPropagation(); }}
               className="bg-black/50 hover:bg-black/70 text-white rounded-full"
             >
               <Plus className="h-5 w-5" />
@@ -99,8 +98,9 @@ export default function WatchlistButton({ item }: WatchlistButtonProps) {
         </DialogTrigger>
         <DialogContent 
             className="sm:max-w-[425px]"
-            onClick={(e) => { e.preventDefault(); e.stopPropagation(); }}
-            onPointerDownOutside={(e) => { e.preventDefault(); e.stopPropagation(); }}
+            onClick={(e) => { e.stopPropagation(); }}
+            onPointerDownOutside={(e) => { e.preventDefault(); }}
+            onInteractOutside={(e) => { e.preventDefault(); }}
         >
             <DialogHeader>
                 <DialogTitle>Add "{item.title}" to...</DialogTitle>
