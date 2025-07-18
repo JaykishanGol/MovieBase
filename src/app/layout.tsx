@@ -6,7 +6,6 @@ import { Toaster } from '@/components/ui/toaster';
 import Header from '@/components/Header';
 import { TorrentSettingsProvider } from '@/contexts/TorrentSettingsContext';
 import { ThemeProvider } from '@/contexts/ThemeContext';
-import { WatchedProvider } from '@/contexts/WatchedContext';
 
 const inter = Inter({ subsets: ['latin'], variable: '--font-inter' });
 
@@ -30,13 +29,11 @@ export default function RootLayout({
           disableTransitionOnChange
         >
           <WatchlistProvider>
-            <WatchedProvider>
-              <TorrentSettingsProvider>
-                <Header />
-                <main>{children}</main>
-                <Toaster />
-              </TorrentSettingsProvider>
-            </WatchedProvider>
+            <TorrentSettingsProvider>
+              <Header />
+              <main>{children}</main>
+              <Toaster />
+            </TorrentSettingsProvider>
           </WatchlistProvider>
         </ThemeProvider>
       </body>

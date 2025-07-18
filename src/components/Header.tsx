@@ -15,8 +15,7 @@ export default function Header() {
 
   const navLinks = [
     { href: '/', label: 'Home' },
-    { href: '/watchlist', label: 'Watchlist' },
-    { href: '/watched', label: 'Watched' },
+    { href: '/lists', label: 'My Lists' },
   ];
 
   return (
@@ -35,7 +34,7 @@ export default function Header() {
               href={link.href}
               className={cn(
                 'transition-colors hover:text-primary',
-                pathname === link.href ? 'text-primary' : 'text-foreground/60'
+                (pathname === link.href || (link.href === '/lists' && pathname.startsWith('/list/'))) ? 'text-primary' : 'text-foreground/60'
               )}
             >
               {link.label}

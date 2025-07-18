@@ -5,14 +5,12 @@ import Link from 'next/link';
 import { Card, CardContent } from '@/components/ui/card';
 import WatchlistButton from './WatchlistButton';
 import { CarouselItem } from '@/types';
-import MoveToWatchedButton from './MoveToWatchedButton';
 
 interface MovieCardProps {
   item: CarouselItem;
-  showMoveToWatched?: boolean;
 }
 
-export default function MovieCard({ item, showMoveToWatched = false }: MovieCardProps) {
+export default function MovieCard({ item }: MovieCardProps) {
   return (
     <Card className="group relative w-full transform-gpu transition-all duration-300 ease-in-out hover:scale-105 hover:z-10">
       <Link href={`/${item.media_type}/${item.id}`}>
@@ -35,7 +33,6 @@ export default function MovieCard({ item, showMoveToWatched = false }: MovieCard
       </Link>
       <div className="absolute top-2 right-2 z-20 flex flex-col gap-2">
         <WatchlistButton item={item} />
-        {showMoveToWatched && <MoveToWatchedButton item={item} />}
       </div>
       <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/80 via-black/50 to-transparent p-4">
         <h3 className="font-semibold text-white truncate">{item.title}</h3>

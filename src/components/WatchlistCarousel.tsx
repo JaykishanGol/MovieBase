@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useWatchlist } from '@/contexts/WatchlistContext';
@@ -5,7 +6,7 @@ import MovieCarousel from './MovieCarousel';
 import { Loader2 } from 'lucide-react';
 
 export default function WatchlistCarousel() {
-  const { watchlist, loading } = useWatchlist();
+  const { lists, loading } = useWatchlist();
 
   if (loading) {
     return (
@@ -15,9 +16,11 @@ export default function WatchlistCarousel() {
     );
   }
 
-  if (watchlist.length === 0) {
-    return null; // Don't show the carousel if the watchlist is empty
+  const mainWatchlist = lists.find(list => list.id === 'default-watchlist');
+
+  if (!mainWatchlist || mainWatchlist.items.length === 0) {
+    return null; // Don't show the carousel if the main watchlist is empty
   }
 
-  return <MovieCarousel title="My Watchlist" items={watchlist} />;
+  return <MovieCarousel title="My Watchlist" items={mainWatchlist.items} />;
 }
