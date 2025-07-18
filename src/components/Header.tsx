@@ -16,6 +16,7 @@ export default function Header() {
   const navLinks = [
     { href: '/', label: 'Home' },
     { href: '/watchlist', label: 'Watchlist' },
+    { href: '/watched', label: 'Watched' },
   ];
 
   return (
