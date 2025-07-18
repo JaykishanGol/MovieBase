@@ -51,15 +51,21 @@ export default async function DetailPage({
   return (
     <div>
       <div className="relative h-[50vh] w-full">
-        <Image
-          src={`https://image.tmdb.org/t/p/original${data.backdrop_path}`}
-          alt={title}
-          layout="fill"
-          objectFit="cover"
-          className="absolute z-0 opacity-30"
-          data-ai-hint="movie backdrop"
-        />
-        <div className="absolute inset-0 bg-gradient-to-t from-background to-transparent z-10" />
+        {data.backdrop_path ? (
+          <>
+            <Image
+              src={`https://image.tmdb.org/t/p/original${data.backdrop_path}`}
+              alt={title}
+              layout="fill"
+              objectFit="cover"
+              className="absolute z-0 opacity-30"
+              data-ai-hint="movie backdrop"
+            />
+            <div className="absolute inset-0 bg-gradient-to-t from-background to-transparent z-10" />
+          </>
+        ) : (
+          <div className="absolute inset-0 bg-card z-0" />
+        )}
       </div>
 
       <div className="container relative z-20 -mt-48 pb-12">
