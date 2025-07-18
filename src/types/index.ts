@@ -35,6 +35,7 @@ export type CarouselItem = {
     poster_path: string | null;
     media_type: 'movie' | 'tv';
     release_date: string;
+    added_at?: number;
 };
 
 export type SearchResult = {

@@ -57,10 +57,10 @@ export function WatchlistProvider({ children }: { children: ReactNode }) {
         const storedCustomLists = parsed.filter(l => l.id !== 'default-watchlist' && l.id !== 'default-watched');
         
         const defaultWatchlist = parsed.find(l => l.id === 'default-watchlist');
-        if (defaultWatchlist) finalLists[0].items = defaultWatchlist.items;
+        if (defaultWatchlist) finalLists[0].items = defaultWatchlist.items.map(item => ({...item, added_at: item.added_at || Date.now() }));
 
         const defaultWatched = parsed.find(l => l.id === 'default-watched');
-        if (defaultWatched) finalLists[1].items = defaultWatched.items;
+        if (defaultWatched) finalLists[1].items = defaultWatched.items.map(item => ({...item, added_at: item.added_at || Date.now() }));
 
         setLists([...finalLists, ...storedCustomLists]);
       } else {
@@ -72,12 +72,12 @@ export function WatchlistProvider({ children }: { children: ReactNode }) {
         let migrated = false;
 
         if (oldWatchlistRaw) {
-          newLists[0].items = JSON.parse(oldWatchlistRaw);
+          newLists[0].items = JSON.parse(oldWatchlistRaw).map((item: Omit<CarouselItem, 'added_at'>) => ({ ...item, added_at: Date.now() }));
           localStorage.removeItem(OLD_WATCHLIST_KEY);
           migrated = true;
         }
         if (oldWatchedRaw) {
-          newLists[1].items = JSON.parse(oldWatchedRaw);
+          newLists[1].items = JSON.parse(oldWatchedRaw).map((item: Omit<CarouselItem, 'added_at'>) => ({ ...item, added_at: Date.now() }));
           localStorage.removeItem(OLD_WATCHED_KEY);
           migrated = true;
         }
@@ -129,10 +129,12 @@ export function WatchlistProvider({ children }: { children: ReactNode }) {
     const newLists = lists.map(list => {
       const isInList = list.items.some(i => i.id === item.id && i.media_type === item.media_type);
       const shouldBeInList = listIds.includes(list.id);
+      
+      const itemWithTimestamp = { ...item, added_at: Date.now() };
 
       if (shouldBeInList && !isInList) {
         // Add item
-        return { ...list, items: [...list.items, item] };
+        return { ...list, items: [...list.items, itemWithTimestamp] };
       }
       if (!shouldBeInList && isInList) {
         // Remove item
@@ -148,7 +150,8 @@ export function WatchlistProvider({ children }: { children: ReactNode }) {
     const mainWatchlist = newLists.find(l => l.id === 'default-watchlist');
     if (mainWatchlist) {
         const existingItemIds = new Set(mainWatchlist.items.map(i => `${i.media_type}-${i.id}`));
-        const itemsToActuallyAdd = itemsToAdd.filter(item => !existingItemIds.has(`${item.media_type}-${item.id}`));
+        const itemsToActuallyAdd = itemsToAdd.filter(item => !existingItemIds.has(`${item.media_type}-${item.id}`))
+            .map(item => ({ ...item, added_at: Date.now() }));
         mainWatchlist.items.push(...itemsToActuallyAdd);
     }
     updateLocalStorage(newLists);
