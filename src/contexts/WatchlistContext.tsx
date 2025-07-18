@@ -24,11 +24,13 @@ interface WatchlistContextType {
   createList: (name: string) => Promise<Watchlist>;
   deleteList: (listId: string) => void;
   addItemToLists: (item: CarouselItem, listIds: string[]) => void;
-  removeItemFromList: (item: CarouselItem, listId: string) => void;
-  getListsForItem: (item: CarouselItem) => Watchlist[];
+  addItems: (items: CarouselItem[]) => void; // For bulk import
+  watchlist: CarouselItem[]; // For backward compatibility with import page
 }
 
 const LISTS_KEY = 'moviebase_lists';
+const OLD_WATCHLIST_KEY = 'watchlist'; // Key for the old single watchlist
+const OLD_WATCHED_KEY = 'watched'; // Key for the old single watched list
 
 const WatchlistContext = createContext<WatchlistContextType | undefined>(
   undefined
@@ -46,11 +48,12 @@ export function WatchlistProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     setLoading(true);
     try {
-      const storedLists = localStorage.getItem(LISTS_KEY);
-      if (storedLists) {
-        const parsed = JSON.parse(storedLists) as Watchlist[];
+      const storedListsRaw = localStorage.getItem(LISTS_KEY);
+      
+      if (storedListsRaw) {
+        const parsed = JSON.parse(storedListsRaw) as Watchlist[];
         // Ensure default lists exist and are not deletable
-        const finalLists = [...DEFAULT_LISTS];
+        const finalLists = [...DEFAULT_LISTS.map(l => ({...l}))]; // Deep copy
         const storedCustomLists = parsed.filter(l => l.id !== 'default-watchlist' && l.id !== 'default-watched');
         
         const defaultWatchlist = parsed.find(l => l.id === 'default-watchlist');
@@ -60,9 +63,29 @@ export function WatchlistProvider({ children }: { children: ReactNode }) {
         if (defaultWatched) finalLists[1].items = defaultWatched.items;
 
         setLists([...finalLists, ...storedCustomLists]);
-
       } else {
-        setLists(DEFAULT_LISTS);
+        // Migration logic from old format
+        const oldWatchlistRaw = localStorage.getItem(OLD_WATCHLIST_KEY);
+        const oldWatchedRaw = localStorage.getItem(OLD_WATCHED_KEY);
+        
+        const newLists = [...DEFAULT_LISTS.map(l => ({...l}))]; // Deep copy
+        let migrated = false;
+
+        if (oldWatchlistRaw) {
+          newLists[0].items = JSON.parse(oldWatchlistRaw);
+          localStorage.removeItem(OLD_WATCHLIST_KEY);
+          migrated = true;
+        }
+        if (oldWatchedRaw) {
+          newLists[1].items = JSON.parse(oldWatchedRaw);
+          localStorage.removeItem(OLD_WATCHED_KEY);
+          migrated = true;
+        }
+
+        if (migrated) {
+          localStorage.setItem(LISTS_KEY, JSON.stringify(newLists));
+        }
+        setLists(newLists);
       }
     } catch (error) {
       console.error("Failed to parse lists from localStorage", error);
@@ -120,26 +143,19 @@ export function WatchlistProvider({ children }: { children: ReactNode }) {
     updateLocalStorage(newLists);
   }, [lists, updateLocalStorage]);
 
-  const removeItemFromList = useCallback((item: CarouselItem, listId: string) => {
-      const newLists = lists.map(list => {
-          if (list.id === listId) {
-              return {
-                  ...list,
-                  items: list.items.filter(i => !(i.id === item.id && i.media_type === item.media_type))
-              };
-          }
-          return list;
-      });
-      updateLocalStorage(newLists);
+  const addItems = useCallback((itemsToAdd: CarouselItem[]) => {
+    const newLists = [...lists];
+    const mainWatchlist = newLists.find(l => l.id === 'default-watchlist');
+    if (mainWatchlist) {
+        const existingItemIds = new Set(mainWatchlist.items.map(i => `${i.media_type}-${i.id}`));
+        const itemsToActuallyAdd = itemsToAdd.filter(item => !existingItemIds.has(`${item.media_type}-${item.id}`));
+        mainWatchlist.items.push(...itemsToActuallyAdd);
+    }
+    updateLocalStorage(newLists);
   }, [lists, updateLocalStorage]);
 
-  const getListsForItem = useCallback((item: CarouselItem) => {
-    return lists.filter(list => list.items.some(i => i.id === item.id && i.media_type === item.media_type));
-  }, [lists]);
-
-
   return (
-    <WatchlistContext.Provider value={{ lists, loading, createList, deleteList, addItemToLists, removeItemFromList, getListsForItem }}>
+    <WatchlistContext.Provider value={{ lists, loading, createList, deleteList, addItemToLists, addItems, watchlist: lists.find(l => l.id === 'default-watchlist')?.items || [] }}>
       {children}
     </WatchlistContext.Provider>
   );

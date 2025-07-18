@@ -2,7 +2,7 @@
 'use client';
 
 import Link from 'next/link';
-import { Clapperboard } from 'lucide-react';
+import { Clapperboard, List, FileInput } from 'lucide-react';
 import Search from './Search';
 import { usePathname } from 'next/navigation';
 import { cn } from '@/lib/utils';
@@ -16,6 +16,7 @@ export default function Header() {
   const navLinks = [
     { href: '/', label: 'Home' },
     { href: '/lists', label: 'My Lists' },
+    { href: '/import', label: 'Import' },
   ];
 
   return (

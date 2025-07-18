@@ -33,34 +33,41 @@ function parseCsv(csvString: string): { title: string }[] {
     const titles: { title: string }[] = [];
     const lines = csvString.split('\n');
 
-    // Skip header and potential empty lines at the start
-    let lineIndex = 0;
-    while(lineIndex < lines.length && !lines[lineIndex].toLowerCase().includes('title,')) {
-        lineIndex++;
+    // Find header line
+    const headerIndex = lines.findIndex(line => line.toLowerCase().includes('title'));
+    if (headerIndex === -1) {
+        // Fallback for no header: assume first column is title
+        for (const line of lines) {
+            const trimmedLine = line.trim();
+            if (!trimmedLine) continue;
+            const title = trimmedLine.split(',')[0].replace(/"/g, '').trim();
+            if (title) {
+                titles.push({ title });
+            }
+        }
+        return titles;
     }
-    // Skip the header line itself
-    if (lineIndex < lines.length) {
-        lineIndex++;
-    }
+    
+    const contentLines = lines.slice(headerIndex + 1);
 
-    for (; lineIndex < lines.length; lineIndex++) {
-        const line = lines[lineIndex].trim();
-        if (!line) continue;
+    for (const line of contentLines) {
+        const trimmedLine = line.trim();
+        if (!trimmedLine) continue;
 
         let title;
-        if (line.startsWith('"')) {
-            // Handle quoted titles
-            const closingQuoteIndex = line.indexOf('"', 1);
+        if (trimmedLine.startsWith('"')) {
+            // Handle quoted titles that may contain commas
+            const closingQuoteIndex = trimmedLine.indexOf('"', 1);
             if (closingQuoteIndex > 0) {
-                title = line.substring(1, closingQuoteIndex);
+                title = trimmedLine.substring(1, closingQuoteIndex);
             }
         } else {
             // Handle unquoted titles
-            const commaIndex = line.indexOf(',');
+            const commaIndex = trimmedLine.indexOf(',');
             if (commaIndex !== -1) {
-                title = line.substring(0, commaIndex);
+                title = trimmedLine.substring(0, commaIndex);
             } else {
-                title = line; // Assume the whole line is the title if no comma
+                title = trimmedLine; // Assume the whole line is the title if no comma
             }
         }
 
@@ -172,7 +179,7 @@ export default function ImportWatchlistPage() {
         setImportResult(results);
         toast({
             title: 'Import Complete',
-            description: `${results.successful.length} items imported successfully.`,
+            description: `${results.successful.length} items added to "My Watchlist".`,
         });
         setIsProcessing(false);
     };
@@ -183,7 +190,7 @@ export default function ImportWatchlistPage() {
                 <CardHeader>
                     <CardTitle>Import Watchlist</CardTitle>
                     <CardDescription>
-                        Paste the content of your Google Watchlist JSON or CSV file here. The page will automatically detect the format.
+                        Paste the content of your Google Watchlist JSON or CSV file here. The page will automatically detect the format and add items to your "My Watchlist".
                     </CardDescription>
                 </CardHeader>
                 <CardContent className="space-y-4">
@@ -203,7 +210,7 @@ export default function ImportWatchlistPage() {
                         ) : (
                              <>
                                 <UploadCloud className="mr-2 h-4 w-4" />
-                                Import Watchlist
+                                Import to "My Watchlist"
                              </>
                         )}
                     </Button>
@@ -231,7 +238,7 @@ export default function ImportWatchlistPage() {
                     </Card>
                     <Card>
                         <CardHeader>
-                            <CardTitle className="flex items-center gap-2">
+                             <CardTitle className="flex items-center gap-2">
                                 <XCircle className="text-red-500" />
                                 Failed to Import ({importResult.failed.length})
                             </CardTitle>
