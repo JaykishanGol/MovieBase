@@ -25,13 +25,14 @@ function SearchGenerator() {
   const {
     sites,
     addSite,
+    removeSite, // Added removeSite
     keywords,
     addKeyword,
     removeKeyword,
   } = useTorrentSettings();
 
   const [selectedSites, setSelectedSites] = useState<Set<string>>(
-    new Set(sites.map((site) => site.id))
+    new Set(sites.filter(s => s.id.startsWith('default-')).map((site) => site.id))
   );
   const [selectedKeywords, setSelectedKeywords] = useState<Set<string>>(
     new Set()
@@ -252,13 +253,13 @@ function SearchGenerator() {
 
       <Card>
         <CardHeader>
-          <CardTitle>Add a Custom Search Site</CardTitle>
+          <CardTitle>Manage Your Custom Search Sites</CardTitle>
           <CardDescription>
-            This will permanently add the site to your list for future use.
+            Add or remove your personal search sites.
           </CardDescription>
         </CardHeader>
-        <CardContent>
-          <form onSubmit={handleAddSite} className="space-y-4">
+        <CardContent className="space-y-6">
+           <form onSubmit={handleAddSite} className="space-y-4">
             <div className="space-y-2">
               <Label htmlFor="site-name">Site Name</Label>
               <Input
@@ -284,6 +285,21 @@ function SearchGenerator() {
               <PlusCircle className="mr-2 h-4 w-4" /> Add Site
             </Button>
           </form>
+
+          <div className="space-y-2">
+            <h4 class="font-medium">Your Sites</h4>
+            {sites.filter(s => s.user_id).map(site => (
+                <div key={site.id} className="flex items-center justify-between p-2 bg-muted rounded-md">
+                    <span className="font-mono text-sm">{site.name}</span>
+                    <Button variant="ghost" size="icon" onClick={() => removeSite(site.id)}>
+                        <X className="h-4 w-4"/>
+                    </Button>
+                </div>
+            ))}
+            {sites.filter(s => s.user_id).length === 0 && (
+                <p className="text-sm text-muted-foreground">You haven't added any custom sites yet.</p>
+            )}
+          </div>
         </CardContent>
       </Card>
     </div>

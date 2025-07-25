@@ -7,18 +7,22 @@ import {
   useState,
   useEffect,
   ReactNode,
+  useCallback,
 } from 'react';
+import { supabase } from '@/lib/supabase';
+import { useAuth } from './AuthContext';
 
 export interface TorrentSite {
   id: string;
   name: string;
   urlTemplate: string;
+  user_id?: string;
 }
 
 export interface TorrentKeyword {
   id: string;
   value: string;
-  enabled: boolean;
+  user_id?: string;
 }
 
 interface TorrentSettingsContextType {
@@ -28,96 +32,114 @@ interface TorrentSettingsContextType {
   keywords: TorrentKeyword[];
   addKeyword: (value: string) => void;
   removeKeyword: (id: string) => void;
-  toggleKeyword: (id: string) => void;
+  toggleKeyword: (id: string) => void; // This might be deprecated if we are not storing enabled state
 }
-
-const SITES_KEY = 'torrent_sites';
-const KEYWORDS_KEY = 'torrent_keywords';
-const DEFAULT_SITES: TorrentSite[] = [
-    { id: '1', name: '1337x', urlTemplate: 'https://1337x.to/search/{query}/1/' },
-    { id: '2', name: 'The Pirate Bay', urlTemplate: 'https://thepiratebay.org/search.php?q={query}' },
-    { id: '3', name: 'uindex.org', urlTemplate: 'https://uindex.org/search.php?search={query}&c=0' },
-    { id: '4', name: 'bt4gprx', urlTemplate: 'https://bt4gprx.com/search?q={query}%20' },
-    { id: '5', name: '1tamilmv', urlTemplate: 'https://www.1tamilmv.tube/index.php?/search/&q={query}%20&quick=1' },
-];
-
-const DEFAULT_KEYWORDS: TorrentKeyword[] = [
-  { id: 'kw1', value: '2160p', enabled: true },
-  { id: 'kw2', value: 'HDR', enabled: true },
-  { id: 's01', value: 'S01', enabled: false },
-  { id: 's02', value: 'S02', enabled: false },
-  { id: 's03', value: 'S03', enabled: false },
-  { id: 's04', value: 'S04', enabled: false },
-  { id: 's05', value: 'S05', enabled: false },
-  { id: 'e01', value: 'E01', enabled: false },
-  { id: 'e02', value: 'E02', enabled: false },
-  { id: 'e03', value: 'E03', enabled: false },
-  { id: 'e04', value: 'E04', enabled: false },
-  { id: 'e05', value: 'E05', enabled: false },
-]
 
 const TorrentSettingsContext = createContext<
   TorrentSettingsContextType | undefined
 >(undefined);
 
+const DEFAULT_SITES: Omit<TorrentSite, 'id'>[] = [
+    { name: '1337x', urlTemplate: 'https://1337x.to/search/{query}/1/' },
+    { name: 'The Pirate Bay', urlTemplate: 'https://thepiratebay.org/search.php?q={query}' },
+    { name: 'uindex.org', urlTemplate: 'https://uindex.org/search.php?search={query}&c=0' },
+    { name: 'bt4gprx', urlTemplate: 'https://bt4gprx.com/search?q={query}%20' },
+    { name: '1tamilmv', urlTemplate: 'https://www.1tamilmv.tube/index.php?/search/&q={query}%20&quick=1' },
+];
+
 export function TorrentSettingsProvider({ children }: { children: ReactNode }) {
+  const { user } = useAuth();
   const [sites, setSites] = useState<TorrentSite[]>([]);
   const [keywords, setKeywords] = useState<TorrentKeyword[]>([]);
   const [loading, setLoading] = useState(true);
 
-  useEffect(() => {
-    try {
-      const storedSites = localStorage.getItem(SITES_KEY);
-      setSites(storedSites ? JSON.parse(storedSites) : DEFAULT_SITES);
-      
-      const storedKeywords = localStorage.getItem(KEYWORDS_KEY);
-      if (storedKeywords) {
-        const parsedKeywords = JSON.parse(storedKeywords);
-        setKeywords(parsedKeywords.map((kw: any) => ({ ...kw, enabled: kw.enabled ?? true })));
-      } else {
-        setKeywords(DEFAULT_KEYWORDS);
-      }
-
-    } catch (error) {
-      console.error('Failed to parse torrent settings from localStorage', error);
-      setSites(DEFAULT_SITES);
-      setKeywords(DEFAULT_KEYWORDS);
+  const fetchSettings = useCallback(async () => {
+    if (!user) {
+        setSites(DEFAULT_SITES.map(s => ({...s, id: `default-${s.name}`})));
+        setKeywords([]);
+        setLoading(false);
+        return;
     }
+    setLoading(true);
+    
+    const { data: sitesData, error: sitesError } = await supabase
+      .from('torrent_sites')
+      .select('*')
+      .eq('user_id', user.id);
+
+    if (sitesError) console.error('Error fetching sites:', sitesError);
+
+    const { data: keywordsData, error: keywordsError } = await supabase
+        .from('torrent_keywords')
+        .select('*')
+        .eq('user_id', user.id);
+    
+    if (keywordsError) console.error('Error fetching keywords:', keywordsError);
+
+    setSites([...DEFAULT_SITES.map(s => ({...s, id: `default-${s.name}`})), ...(sitesData || [])]);
+    setKeywords(keywordsData || []);
     setLoading(false);
-  }, []);
+  }, [user]);
 
-  const updateSitesStorage = (newSites: TorrentSite[]) => {
-    setSites(newSites);
-    localStorage.setItem(SITES_KEY, JSON.stringify(newSites));
+  useEffect(() => {
+    fetchSettings();
+  }, [fetchSettings]);
+
+  const addSite = async (name: string, urlTemplate: string) => {
+    if (!user) return;
+    const { data, error } = await supabase
+      .from('torrent_sites')
+      .insert({ name, url_template: urlTemplate, user_id: user.id })
+      .select()
+      .single();
+    
+    if (error) {
+        console.error('Error adding site:', error);
+    } else if (data) {
+        setSites(prev => [...prev, {id: data.id, name: data.name, urlTemplate: data.url_template, user_id: data.user_id}]);
+    }
   };
 
-  const updateKeywordsStorage = (newKeywords: TorrentKeyword[]) => {
-    setKeywords(newKeywords);
-    localStorage.setItem(KEYWORDS_KEY, JSON.stringify(newKeywords));
+  const removeSite = async (id: string) => {
+    if (!user || id.startsWith('default-')) return; // Cannot delete default sites
+    const { error } = await supabase.from('torrent_sites').delete().eq('id', id);
+    if (error) {
+        console.error('Error removing site:', error);
+    } else {
+        setSites(prev => prev.filter((site) => site.id !== id));
+    }
   };
 
-  const addSite = (name: string, urlTemplate: string) => {
-    const newSite: TorrentSite = { id: crypto.randomUUID(), name, urlTemplate };
-    updateSitesStorage([...sites, newSite]);
-  };
-
-  const removeSite = (id: string) => {
-    updateSitesStorage(sites.filter((site) => site.id !== id));
-  };
-
-  const addKeyword = (value: string) => {
+  const addKeyword = async (value: string) => {
+    if (!user) return;
     if (keywords.some(k => k.value.toLowerCase() === value.toLowerCase())) return;
-    const newKeyword: TorrentKeyword = { id: crypto.randomUUID(), value, enabled: true };
-    updateKeywordsStorage([...keywords, newKeyword]);
+
+    const { data, error } = await supabase
+        .from('torrent_keywords')
+        .insert({ value, user_id: user.id })
+        .select()
+        .single();
+    
+    if(error){
+        console.error('Error adding keyword:', error);
+    } else if (data) {
+        setKeywords(prev => [...prev, data]);
+    }
   };
 
-  const removeKeyword = (id: string) => {
-    updateKeywordsStorage(keywords.filter((keyword) => keyword.id !== id));
+  const removeKeyword = async (id: string) => {
+    if (!user) return;
+    const { error } = await supabase.from('torrent_keywords').delete().eq('id', id);
+    if(error){
+        console.error('Error removing keyword:', error);
+    } else {
+        setKeywords(prev => prev.filter((keyword) => keyword.id !== id));
+    }
   };
 
+  // This function might need re-evaluation as 'enabled' state is not in DB schema
   const toggleKeyword = (id: string) => {
-    const newKeywords = keywords.map(kw => kw.id === id ? { ...kw, enabled: !kw.enabled } : kw);
-    updateKeywordsStorage(newKeywords);
+    console.warn("toggleKeyword is not implemented with Supabase backend");
   };
 
   if (loading) {

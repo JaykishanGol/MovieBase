@@ -70,7 +70,7 @@ export default function Header() {
               <DropdownMenuTrigger asChild>
                 <Button variant="ghost" size="icon">
                   <Avatar className="h-8 w-8">
-                    <AvatarImage src={user?.photoURL || ''} alt={user?.displayName || 'User'} />
+                    <AvatarImage src={user?.user_metadata.avatar_url || ''} alt={user?.user_metadata.name || 'User'} />
                     <AvatarFallback>
                       <User />
                     </AvatarFallback>
@@ -82,7 +82,7 @@ export default function Header() {
                   <>
                     <DropdownMenuLabel>
                       <div className="flex flex-col">
-                        <span>{user.displayName}</span>
+                        <span>{user.user_metadata.name}</span>
                         <span className="text-xs font-normal text-muted-foreground">{user.email}</span>
                       </div>
                     </DropdownMenuLabel>
@@ -94,10 +94,7 @@ export default function Header() {
                 ) : (
                   <>
                     <DropdownMenuItem onClick={() => signIn()}>
-                      Sign In
-                    </DropdownMenuItem>
-                     <DropdownMenuItem onClick={() => signIn()}>
-                      Sign Up
+                      Sign In with Google
                     </DropdownMenuItem>
                   </>
                 )}

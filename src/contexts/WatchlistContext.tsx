@@ -10,155 +10,245 @@ import {
   useCallback,
 } from 'react';
 import { CarouselItem } from '@/types';
+import { supabase } from '@/lib/supabase';
+import { useAuth } from './AuthContext';
+import { useToast } from '@/hooks/use-toast';
 
 export interface Watchlist {
   id: string;
   name: string;
   items: CarouselItem[];
   isDeletable: boolean;
+  user_id: string;
 }
 
 interface WatchlistContextType {
   lists: Watchlist[];
   loading: boolean;
-  createList: (name: string) => Promise<Watchlist>;
+  createList: (name: string) => Promise<any>;
   deleteList: (listId: string) => void;
   addItemToLists: (item: CarouselItem, listIds: string[]) => void;
   addItems: (items: CarouselItem[]) => void; // For bulk import
-  watchlist: CarouselItem[]; // For backward compatibility with import page
+  watchlist: CarouselItem[]; // Legacy support for main watchlist
 }
-
-const LISTS_KEY = 'moviebase_lists';
-const OLD_WATCHLIST_KEY = 'watchlist'; // Key for the old single watchlist
-const OLD_WATCHED_KEY = 'watched'; // Key for the old single watched list
 
 const WatchlistContext = createContext<WatchlistContextType | undefined>(
   undefined
 );
 
-const DEFAULT_LISTS: Watchlist[] = [
-  { id: 'default-watchlist', name: 'My Watchlist', items: [], isDeletable: false },
-  { id: 'default-watched', name: 'Watched', items: [], isDeletable: false },
-];
-
 export function WatchlistProvider({ children }: { children: ReactNode }) {
+  const { user } = useAuth();
+  const { toast } = useToast();
   const [lists, setLists] = useState<Watchlist[]>([]);
   const [loading, setLoading] = useState(true);
 
-  useEffect(() => {
+  const fetchLists = useCallback(async () => {
+    if (!user) {
+      setLists([]);
+      setLoading(false);
+      return;
+    }
+
     setLoading(true);
-    try {
-      const storedListsRaw = localStorage.getItem(LISTS_KEY);
-      
-      if (storedListsRaw) {
-        const parsed = JSON.parse(storedListsRaw) as Watchlist[];
-        // Ensure default lists exist and are not deletable
-        const finalLists = [...DEFAULT_LISTS.map(l => ({...l}))]; // Deep copy
-        const storedCustomLists = parsed.filter(l => l.id !== 'default-watchlist' && l.id !== 'default-watched');
-        
-        const defaultWatchlist = parsed.find(l => l.id === 'default-watchlist');
-        if (defaultWatchlist) finalLists[0].items = defaultWatchlist.items.map(item => ({...item, added_at: item.added_at || Date.now() }));
+    const { data: listsData, error: listsError } = await supabase
+      .from('lists')
+      .select('id, name, is_deletable, user_id')
+      .eq('user_id', user.id);
 
-        const defaultWatched = parsed.find(l => l.id === 'default-watched');
-        if (defaultWatched) finalLists[1].items = defaultWatched.items.map(item => ({...item, added_at: item.added_at || Date.now() }));
-
-        setLists([...finalLists, ...storedCustomLists]);
-      } else {
-        // Migration logic from old format
-        const oldWatchlistRaw = localStorage.getItem(OLD_WATCHLIST_KEY);
-        const oldWatchedRaw = localStorage.getItem(OLD_WATCHED_KEY);
-        
-        const newLists = [...DEFAULT_LISTS.map(l => ({...l}))]; // Deep copy
-        let migrated = false;
-
-        if (oldWatchlistRaw) {
-          newLists[0].items = JSON.parse(oldWatchlistRaw).map((item: Omit<CarouselItem, 'added_at'>) => ({ ...item, added_at: Date.now() }));
-          localStorage.removeItem(OLD_WATCHLIST_KEY);
-          migrated = true;
-        }
-        if (oldWatchedRaw) {
-          newLists[1].items = JSON.parse(oldWatchedRaw).map((item: Omit<CarouselItem, 'added_at'>) => ({ ...item, added_at: Date.now() }));
-          localStorage.removeItem(OLD_WATCHED_KEY);
-          migrated = true;
-        }
-
-        if (migrated) {
-          localStorage.setItem(LISTS_KEY, JSON.stringify(newLists));
-        }
-        setLists(newLists);
-      }
-    } catch (error) {
-      console.error("Failed to parse lists from localStorage", error);
-      setLists(DEFAULT_LISTS);
+    if (listsError) {
+      console.error('Error fetching lists:', listsError);
+      toast({ variant: 'destructive', title: 'Error', description: 'Could not fetch your lists.' });
+      setLoading(false);
+      return;
     }
+    
+    // Ensure default lists exist
+    let hasWatchlist = listsData.some(l => l.name === 'My Watchlist');
+    let hasWatched = listsData.some(l => l.name === 'Watched');
+    let finalListsData = [...listsData];
+
+    if (!hasWatchlist) {
+        const { data, error } = await supabase.from('lists').insert({ name: 'My Watchlist', user_id: user.id, is_deletable: false }).select().single();
+        if(error) { console.error(error); }
+        else if(data) { finalListsData.push({ id: data.id, name: data.name, is_deletable: data.is_deletable, user_id: data.user_id }); }
+    }
+     if (!hasWatched) {
+        const { data, error } = await supabase.from('lists').insert({ name: 'Watched', user_id: user.id, is_deletable: false }).select().single();
+        if(error) { console.error(error); }
+        else if(data) { finalListsData.push({ id: data.id, name: data.name, is_deletable: data.is_deletable, user_id: data.user_id }); }
+    }
+
+    const { data: itemsData, error: itemsError } = await supabase
+      .from('list_items')
+      .select('*, lists(id)')
+      .in('list_id', finalListsData.map(l => l.id));
+
+    if (itemsError) {
+      console.error('Error fetching list items:', itemsError);
+      setLoading(false);
+      return;
+    }
+
+    const listsWithItems = finalListsData.map((list) => ({
+      ...list,
+      isDeletable: !!list.is_deletable,
+      items: itemsData
+        .filter((item) => item.list_id === list.id)
+        .map(item => ({
+             id: item.media_id,
+             title: item.title,
+             poster_path: item.poster_path,
+             media_type: item.media_type,
+             release_date: item.release_date,
+             added_at: new Date(item.created_at).getTime(),
+        }))
+        .sort((a, b) => b.added_at - a.added_at),
+    })).sort((a,b) => {
+      if (a.name === 'My Watchlist') return -1;
+      if (b.name === 'My Watchlist') return 1;
+      if (a.name === 'Watched') return -1;
+      if (b.name === 'Watched') return 1;
+      return a.name.localeCompare(b.name);
+    });
+    
+    setLists(listsWithItems);
     setLoading(false);
-  }, []);
+  }, [user, toast]);
 
-  const updateLocalStorage = useCallback((newLists: Watchlist[]) => {
-    localStorage.setItem(LISTS_KEY, JSON.stringify(newLists));
-    setLists(newLists);
-  }, []);
+  useEffect(() => {
+    fetchLists();
+  }, [fetchLists]);
 
-  const createList = useCallback((name: string) => {
-    return new Promise<Watchlist>((resolve, reject) => {
-        setLists(prevLists => {
-            if (prevLists.some(list => list.name.toLowerCase() === name.toLowerCase())) {
-                reject(new Error("List name already exists"));
-                return prevLists;
-            }
-            const newList: Watchlist = {
-                id: crypto.randomUUID(),
-                name,
-                items: [],
-                isDeletable: true,
-            };
-            const newLists = [...prevLists, newList];
-            updateLocalStorage(newLists);
-            resolve(newList);
-            return newLists;
-        });
-    });
-  }, [updateLocalStorage]);
-
-  const deleteList = useCallback((listId: string) => {
-    const newLists = lists.filter(list => list.id !== listId || !list.isDeletable);
-    updateLocalStorage(newLists);
-  }, [lists, updateLocalStorage]);
-
-  const addItemToLists = useCallback((item: CarouselItem, listIds: string[]) => {
-    const newLists = lists.map(list => {
-      const isInList = list.items.some(i => i.id === item.id && i.media_type === item.media_type);
-      const shouldBeInList = listIds.includes(list.id);
-      
-      const itemWithTimestamp = { ...item, added_at: Date.now() };
-
-      if (shouldBeInList && !isInList) {
-        // Add item
-        return { ...list, items: [...list.items, itemWithTimestamp] };
-      }
-      if (!shouldBeInList && isInList) {
-        // Remove item
-        return { ...list, items: list.items.filter(i => !(i.id === item.id && i.media_type === item.media_type)) };
-      }
-      return list;
-    });
-    updateLocalStorage(newLists);
-  }, [lists, updateLocalStorage]);
-
-  const addItems = useCallback((itemsToAdd: CarouselItem[]) => {
-    const newLists = [...lists];
-    const mainWatchlist = newLists.find(l => l.id === 'default-watchlist');
-    if (mainWatchlist) {
-        const existingItemIds = new Set(mainWatchlist.items.map(i => `${i.media_type}-${i.id}`));
-        const itemsToActuallyAdd = itemsToAdd.filter(item => !existingItemIds.has(`${item.media_type}-${item.id}`))
-            .map(item => ({ ...item, added_at: Date.now() }));
-        mainWatchlist.items.push(...itemsToActuallyAdd);
+  const createList = async (name: string) => {
+    if (!user) return null;
+    if (lists.some(list => list.name.toLowerCase() === name.toLowerCase())) {
+        toast({ variant: 'destructive', title: 'Error', description: 'A list with this name already exists.' });
+        throw new Error("List name already exists");
     }
-    updateLocalStorage(newLists);
-  }, [lists, updateLocalStorage]);
+
+    const { data, error } = await supabase
+      .from('lists')
+      .insert({ name, user_id: user.id, is_deletable: true })
+      .select()
+      .single();
+
+    if (error) {
+      console.error('Error creating list:', error);
+      toast({ variant: 'destructive', title: 'Error', description: 'Could not create the list.' });
+      return null;
+    }
+    
+    const newList = { ...data, items: [], isDeletable: !!data.is_deletable };
+    setLists(prev => [...prev, newList]);
+    return newList;
+  };
+
+  const deleteList = async (listId: string) => {
+    const listToDelete = lists.find(l => l.id === listId);
+    if (!listToDelete || !listToDelete.isDeletable) return;
+
+    const { error } = await supabase.from('lists').delete().eq('id', listId);
+    if (error) {
+        console.error('Error deleting list:', error);
+        toast({ variant: 'destructive', title: 'Error', description: 'Could not delete the list.' });
+    } else {
+        setLists(prev => prev.filter(l => l.id !== listId));
+        toast({ description: `Deleted list "${listToDelete.name}".` });
+    }
+  };
+
+  const addItemToLists = async (item: CarouselItem, listIds: string[]) => {
+      if (!user) return;
+      
+      const { data: existingItems, error: fetchError } = await supabase
+        .from('list_items')
+        .select('list_id')
+        .eq('user_id', user.id)
+        .eq('media_id', item.id)
+        .eq('media_type', item.media_type)
+
+      if (fetchError) {
+        console.error('Could not verify existing items:', fetchError);
+        return;
+      }
+      
+      const currentItemLists = new Set(existingItems.map(i => i.list_id));
+      
+      const listsToAdd = listIds.filter(id => !currentItemLists.has(id));
+      const listsToRemove = Array.from(currentItemLists).filter(id => !listIds.includes(id));
+      
+      if(listsToAdd.length > 0) {
+          const itemsToInsert = listsToAdd.map(listId => ({
+              list_id: listId,
+              user_id: user.id,
+              media_id: item.id,
+              media_type: item.media_type,
+              title: item.title,
+              poster_path: item.poster_path,
+              release_date: item.release_date
+          }));
+          const { error } = await supabase.from('list_items').insert(itemsToInsert);
+          if (error) console.error("Error adding items", error);
+      }
+
+      if(listsToRemove.length > 0) {
+          const { error } = await supabase.from('list_items')
+              .delete()
+              .eq('user_id', user.id)
+              .eq('media_id', item.id)
+              .eq('media_type', item.media_type)
+              .in('list_id', listsToRemove);
+          if (error) console.error("Error removing items", error);
+      }
+      
+      // Debounced or batched updates would be better for performance here
+      await fetchLists();
+  };
+  
+  const addItems = async (itemsToAdd: CarouselItem[]) => {
+      if (!user) return;
+      const mainWatchlist = lists.find(l => l.name === 'My Watchlist');
+      if (!mainWatchlist) {
+          toast({ variant: 'destructive', title: 'Error', description: '"My Watchlist" not found.' });
+          return;
+      }
+
+      const existingItemIds = new Set(mainWatchlist.items.map(i => `${i.media_type}-${i.id}`));
+      const itemsToActuallyAdd = itemsToAdd.filter(item => !existingItemIds.has(`${item.media_type}-${item.id}`));
+      
+      if (itemsToActuallyAdd.length === 0) return;
+
+      const itemsToInsert = itemsToActuallyAdd.map(item => ({
+            list_id: mainWatchlist.id,
+            user_id: user.id,
+            media_id: item.id,
+            media_type: item.media_type,
+            title: item.title,
+            poster_path: item.poster_path,
+            release_date: item.release_date
+      }));
+
+      const { error } = await supabase.from('list_items').insert(itemsToInsert);
+      if (error) {
+           console.error("Error bulk adding items", error);
+           toast({ variant: 'destructive', title: 'Error', description: 'Could not import all items.' });
+      } else {
+           await fetchLists();
+      }
+  };
 
   return (
-    <WatchlistContext.Provider value={{ lists, loading, createList, deleteList, addItemToLists, addItems, watchlist: lists.find(l => l.id === 'default-watchlist')?.items || [] }}>
+    <WatchlistContext.Provider
+      value={{
+        lists,
+        loading,
+        createList,
+        deleteList,
+        addItemToLists,
+        addItems,
+        watchlist: lists.find(l => l.name === 'My Watchlist')?.items || [],
+      }}
+    >
       {children}
     </WatchlistContext.Provider>
   );

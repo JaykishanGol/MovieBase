@@ -4,31 +4,25 @@ This is a NextJS starter in Firebase Studio.
 
 To get started, take a look at src/app/page.tsx.
 
-## Deploying to Render
+## Supabase Setup
 
-To deploy this project to Render, follow these steps:
+This project uses Supabase for authentication and database storage.
 
-1.  **Push to a GitHub Repository:** Make sure your code is pushed to a GitHub repository.
+### 1. Set up Environment Variables
 
-2.  **Create a New Web Service on Render:**
-    *   Go to your [Render Dashboard](https://dashboard.render.com/).
-    *   Click **"New +"** and select **"Web Service"**.
-    *   Connect your GitHub account and select your repository.
+You need to create a `.env.local` file in the root of your project and add your Supabase project URL and anon key. You can find these in your Supabase project's API settings.
 
-3.  **Configure the Service:**
-    *   **Name:** Give your service a name (e.g., `moviebase-app`).
-    *   **Root Directory:** Leave this as is.
-    *   **Environment:** Select `Node`.
-    *   **Build Command:** `npm install && npm run build`
-    *   **Start Command:** `npm start`
+```
+NEXT_PUBLIC_SUPABASE_URL=your-supabase-url
+NEXT_PUBLIC_SUPABASE_ANON_KEY=your-supabase-anon-key
+```
 
-4.  **Add the Environment Variable:**
-    *   Scroll down to the **"Environment"** section.
-    *   Click **"Add Environment Variable"**.
-    *   **Key:** `NEXT_PUBLIC_TMDB_API_KEY`
-    *   **Value:** `10069c04fb7414dd0a7683abb054c50b` (This is the public key you've been using).
+### 2. Set up Database Tables
 
-5.  **Deploy:**
-    *   Click **"Create Web Service"**. Render will automatically build and deploy your application.
+You need to create the required tables in your Supabase database. Go to the "SQL Editor" in your Supabase dashboard and run the SQL commands from the `supabase_schema.sql` file in the root of this project. This will create the `lists`, `list_items`, `torrent_sites`, and `torrent_keywords` tables.
 
-Your app will be live at the URL provided by Render once the deployment is complete.
+### 3. Set up Auth Provider
+
+This project uses Google as the authentication provider. You need to enable the Google provider in your Supabase project's "Authentication" -> "Providers" settings. You will need to get a client ID and secret from the Google Cloud Console.
+
+Follow the Supabase documentation for detailed instructions: [Supabase Google Auth Docs](https://supabase.com/docs/guides/auth/social-login/auth-google)
