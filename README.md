@@ -42,3 +42,27 @@ You need to create the necessary tables in your database for the application to 
 5. Paste the SQL into the editor and click **Run**.
 
 This will create the `lists`, `list_items`, `torrent_sites`, and `torrent_keywords` tables and enable Row Level Security policies to ensure users can only access their own data.
+
+## Deployment to Netlify
+
+To deploy this project to Netlify, follow these steps:
+
+1.  **Push to a Git Repository**: Make sure your project is on GitHub, GitLab, or Bitbucket.
+
+2.  **Create a New Site on Netlify**:
+    *   Log in to your Netlify account.
+    *   Click "Add new site" and choose "Import an existing project".
+    *   Connect to your Git provider and select the repository for this project.
+
+3.  **Configure Build Settings**:
+    *   Netlify should automatically detect that this is a Next.js project and set the build command to `next build` and the publish directory to `.next/`. The `netlify.toml` file in this project already configures this for you.
+
+4.  **Add Environment Variables**: This is the most important step.
+    *   In your Netlify site's dashboard, go to "Site configuration" > "Build & deploy" > "Environment".
+    *   Click "Edit variables" and add the following keys and their corresponding values:
+        *   `NEXT_PUBLIC_SUPABASE_URL`: Your Supabase project URL.
+        *   `NEXT_PUBLIC_SUPABASE_ANON_KEY`: Your Supabase anon key.
+        *   `NEXT_PUBLIC_TMDB_API_KEY`: Your TMDB API key.
+
+5.  **Deploy**:
+    *   Click "Deploy site". Netlify will start the build process and deploy your application.
