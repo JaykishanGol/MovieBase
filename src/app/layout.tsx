@@ -11,6 +11,8 @@ const inter = Inter({ subsets: ['latin'], variable: '--font-inter' });
 export const metadata: Metadata = {
   title: 'MovieBase',
   description: 'Your personal movie and TV show catalog.',
+  manifest: '/manifest.json',
+  themeColor: '#121212',
 };
 
 export default function RootLayout({
