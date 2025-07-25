@@ -27,19 +27,19 @@ export interface TorrentKeyword {
 
 interface TorrentSettingsContextType {
   sites: TorrentSite[];
-  addSite: (name: string, urlTemplate: string) => void;
-  removeSite: (id: string) => void;
+  addSite: (name: string, urlTemplate: string) => Promise<void>;
+  removeSite: (id: string) => Promise<void>;
   keywords: TorrentKeyword[];
-  addKeyword: (value: string) => void;
-  removeKeyword: (id: string) => void;
-  toggleKeyword: (id: string) => void; // This might be deprecated if we are not storing enabled state
+  addKeyword: (value: string) => Promise<void>;
+  removeKeyword: (id: string) => Promise<void>;
+  loading: boolean;
 }
 
 const TorrentSettingsContext = createContext<
   TorrentSettingsContextType | undefined
 >(undefined);
 
-const DEFAULT_SITES: Omit<TorrentSite, 'id'>[] = [
+const DEFAULT_SITES: Omit<TorrentSite, 'id' | 'user_id'>[] = [
     { name: '1337x', urlTemplate: 'https://1337x.to/search/{query}/1/' },
     { name: 'The Pirate Bay', urlTemplate: 'https://thepiratebay.org/search.php?q={query}' },
     { name: 'uindex.org', urlTemplate: 'https://uindex.org/search.php?search={query}&c=0' },
@@ -54,29 +54,32 @@ export function TorrentSettingsProvider({ children }: { children: ReactNode }) {
   const [loading, setLoading] = useState(true);
 
   const fetchSettings = useCallback(async () => {
+    setLoading(true);
+    const defaultSites = DEFAULT_SITES.map(s => ({...s, id: `default-${s.name.replace(/\s/g, '')}`}));
+
     if (!user) {
-        setSites(DEFAULT_SITES.map(s => ({...s, id: `default-${s.name}`})));
+        setSites(defaultSites);
         setKeywords([]);
         setLoading(false);
         return;
     }
-    setLoading(true);
     
     const { data: sitesData, error: sitesError } = await supabase
       .from('torrent_sites')
-      .select('*')
+      .select('id, name, url_template, user_id')
       .eq('user_id', user.id);
 
     if (sitesError) console.error('Error fetching sites:', sitesError);
 
     const { data: keywordsData, error: keywordsError } = await supabase
         .from('torrent_keywords')
-        .select('*')
+        .select('id, value, user_id')
         .eq('user_id', user.id);
     
     if (keywordsError) console.error('Error fetching keywords:', keywordsError);
 
-    setSites([...DEFAULT_SITES.map(s => ({...s, id: `default-${s.name}`})), ...(sitesData || [])]);
+    const userSites = sitesData ? sitesData.map(s => ({ ...s, urlTemplate: s.url_template })) : [];
+    setSites([...defaultSites, ...userSites]);
     setKeywords(keywordsData || []);
     setLoading(false);
   }, [user]);
@@ -90,7 +93,7 @@ export function TorrentSettingsProvider({ children }: { children: ReactNode }) {
     const { data, error } = await supabase
       .from('torrent_sites')
       .insert({ name, url_template: urlTemplate, user_id: user.id })
-      .select()
+      .select('id, name, url_template, user_id')
       .single();
     
     if (error) {
@@ -101,7 +104,7 @@ export function TorrentSettingsProvider({ children }: { children: ReactNode }) {
   };
 
   const removeSite = async (id: string) => {
-    if (!user || id.startsWith('default-')) return; // Cannot delete default sites
+    if (!user || id.startsWith('default-')) return;
     const { error } = await supabase.from('torrent_sites').delete().eq('id', id);
     if (error) {
         console.error('Error removing site:', error);
@@ -137,15 +140,6 @@ export function TorrentSettingsProvider({ children }: { children: ReactNode }) {
     }
   };
 
-  // This function might need re-evaluation as 'enabled' state is not in DB schema
-  const toggleKeyword = (id: string) => {
-    console.warn("toggleKeyword is not implemented with Supabase backend");
-  };
-
-  if (loading) {
-      return null;
-  }
-
   return (
     <TorrentSettingsContext.Provider
       value={{
@@ -155,7 +149,7 @@ export function TorrentSettingsProvider({ children }: { children: ReactNode }) {
         keywords,
         addKeyword,
         removeKeyword,
-        toggleKeyword,
+        loading,
       }}
     >
       {children}

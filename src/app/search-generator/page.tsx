@@ -14,37 +14,41 @@ import {
   X,
   Search as SearchIcon,
   Link as LinkIcon,
+  Loader2,
 } from 'lucide-react';
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
+import { useAuth } from '@/contexts/AuthContext';
 
 function SearchGenerator() {
   const searchParams = useSearchParams();
   const title = searchParams.get('title') || '';
   const year = searchParams.get('year') || '';
+  const { user } = useAuth();
 
   const {
     sites,
     addSite,
-    removeSite, // Added removeSite
+    removeSite,
     keywords,
     addKeyword,
     removeKeyword,
+    loading: settingsLoading,
   } = useTorrentSettings();
 
-  const [selectedSites, setSelectedSites] = useState<Set<string>>(
-    new Set(sites.filter(s => s.id.startsWith('default-')).map((site) => site.id))
-  );
-  const [selectedKeywords, setSelectedKeywords] = useState<Set<string>>(
-    new Set()
-  );
+  const [selectedSites, setSelectedSites] = useState<Set<string>>(new Set());
+  const [selectedKeywords, setSelectedKeywords] = useState<Set<string>>(new Set());
   const [newKeyword, setNewKeyword] = useState('');
-  const [generatedUrls, setGeneratedUrls] = useState<
-    { name: string; url: string }[]
-  >([]);
+  const [generatedUrls, setGeneratedUrls] = useState<{ name: string; url: string }[]>([]);
   const [includeYear, setIncludeYear] = useState(true);
 
   const [newSiteName, setNewSiteName] = useState('');
   const [newSiteUrl, setNewSiteUrl] = useState('');
+
+  useEffect(() => {
+    if (!settingsLoading) {
+      setSelectedSites(new Set(sites.filter(s => s.id.startsWith('default-')).map((site) => site.id)));
+    }
+  }, [settingsLoading, sites]);
 
   const defaultKeywords = useMemo(() => [
     'HD', '720p', '1080p', '2160p', 'HEVC', 'DV', 'HDR', '4k',
@@ -80,9 +84,9 @@ function SearchGenerator() {
     });
   };
 
-  const handleAddKeyword = () => {
-    if (newKeyword.trim()) {
-      addKeyword(newKeyword.trim());
+  const handleAddKeyword = async () => {
+    if (newKeyword.trim() && user) {
+      await addKeyword(newKeyword.trim());
       setNewKeyword('');
     }
   };
@@ -130,14 +134,31 @@ function SearchGenerator() {
     setGeneratedUrls(urls);
   };
 
-  const handleAddSite = (e: React.FormEvent) => {
+  const handleAddSite = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (newSiteName.trim() && newSiteUrl.trim().includes('{query}')) {
-      addSite(newSiteName.trim(), newSiteUrl.trim());
+    if (newSiteName.trim() && newSiteUrl.trim().includes('{query}') && user) {
+      await addSite(newSiteName.trim(), newSiteUrl.trim());
       setNewSiteName('');
       setNewSiteUrl('');
     }
   };
+
+  const handleRemoveKeyword = async (e: React.MouseEvent, keywordValue: string) => {
+    e.stopPropagation();
+    const keywordToRemove = keywords.find(k => k.value === keywordValue);
+    if (keywordToRemove && user) {
+        await removeKeyword(keywordToRemove.id);
+        setSelectedKeywords(prev => {
+            const next = new Set(prev);
+            next.delete(keywordValue);
+            return next;
+        });
+    }
+  };
+  
+  if (settingsLoading) {
+    return <div className="container py-8 flex justify-center"><Loader2 className="h-8 w-8 animate-spin" /></div>
+  }
 
   return (
     <div className="container py-8 space-y-8">
@@ -183,11 +204,13 @@ function SearchGenerator() {
                 value={newKeyword}
                 onChange={(e) => setNewKeyword(e.target.value)}
                 onKeyDown={(e) => e.key === 'Enter' && handleAddKeyword()}
+                disabled={!user}
               />
-              <Button onClick={handleAddKeyword} size="icon">
+              <Button onClick={handleAddKeyword} size="icon" disabled={!user}>
                 <PlusCircle />
               </Button>
             </div>
+            {!user && <p className="text-sm text-muted-foreground mb-4">You must be logged in to add custom words.</p>}
             <div className="flex flex-wrap gap-2">
               {allKeywords.map((keyword) => (
                 <div
@@ -207,15 +230,9 @@ function SearchGenerator() {
                     }`}
                   ></div>
                   <span>{keyword}</span>
-                  {!defaultKeywords.includes(keyword) && (
+                  {user && !defaultKeywords.includes(keyword) && (
                     <button
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        const keywordToRemove = keywords.find(k => k.value === keyword);
-                        if (keywordToRemove) {
-                           removeKeyword(keywordToRemove.id);
-                        }
-                      }}
+                      onClick={(e) => handleRemoveKeyword(e, keyword)}
                       className="hover:text-destructive"
                     >
                       <X className="h-4 w-4" />
@@ -267,6 +284,7 @@ function SearchGenerator() {
                 value={newSiteName}
                 onChange={(e) => setNewSiteName(e.target.value)}
                 placeholder="e.g., My Favorite Site"
+                disabled={!user}
               />
             </div>
             <div className="space-y-2">
@@ -276,18 +294,20 @@ function SearchGenerator() {
                 value={newSiteUrl}
                 onChange={(e) => setNewSiteUrl(e.target.value)}
                 placeholder="e.g., https://example.com/search?q={query}"
+                disabled={!user}
               />
               <p className="text-sm text-muted-foreground">
                 Use {'{query}'} as a placeholder for the search term.
               </p>
             </div>
-            <Button type="submit" className="w-full">
+            <Button type="submit" className="w-full" disabled={!user}>
               <PlusCircle className="mr-2 h-4 w-4" /> Add Site
             </Button>
+            {!user && <p className="text-sm text-muted-foreground">You must be logged in to add custom sites.</p>}
           </form>
 
-          <div className="space-y-2">
-            <h4 class="font-medium">Your Sites</h4>
+          {user && <div className="space-y-2">
+            <h4 className="font-medium">Your Sites</h4>
             {sites.filter(s => s.user_id).map(site => (
                 <div key={site.id} className="flex items-center justify-between p-2 bg-muted rounded-md">
                     <span className="font-mono text-sm">{site.name}</span>
@@ -299,7 +319,7 @@ function SearchGenerator() {
             {sites.filter(s => s.user_id).length === 0 && (
                 <p className="text-sm text-muted-foreground">You haven't added any custom sites yet.</p>
             )}
-          </div>
+          </div>}
         </CardContent>
       </Card>
     </div>
@@ -308,7 +328,7 @@ function SearchGenerator() {
 
 export default function SearchGeneratorPage() {
     return (
-        <Suspense fallback={<div>Loading...</div>}>
+        <Suspense fallback={<div className="container py-8 flex justify-center"><Loader2 className="h-8 w-8 animate-spin" /></div>}>
             <SearchGenerator />
         </Suspense>
     )
