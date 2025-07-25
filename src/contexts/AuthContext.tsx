@@ -11,12 +11,14 @@ import {
 import { Session, User } from '@supabase/supabase-js';
 import { supabase } from '@/lib/supabase';
 import { useToast } from '@/hooks/use-toast';
+import { useRouter } from 'next/navigation';
 
 interface AuthContextType {
   user: User | null;
   session: Session | null;
   loading: boolean;
-  signIn: () => Promise<void>;
+  signInWithPassword: (email:string, password:string) => Promise<any>;
+  signUp: (email:string, password:string) => Promise<any>;
   signOut: () => Promise<void>;
 }
 
@@ -27,6 +29,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [session, setSession] = useState<Session | null>(null);
   const [loading, setLoading] = useState(true);
   const { toast } = useToast();
+  const router = useRouter();
 
   useEffect(() => {
     const getSession = async () => {
@@ -56,22 +59,29 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     };
   }, []);
 
-  const signIn = async () => {
-    const { error } = await supabase.auth.signInWithOAuth({
-      provider: 'google',
-      options: {
-        redirectTo: window.location.origin,
-      }
+  const signInWithPassword = async (email: string, password: string) => {
+    const { error } = await supabase.auth.signInWithPassword({
+        email,
+        password,
     });
     if (error) {
-      console.error('Error signing in:', error);
-      toast({
-        variant: 'destructive',
-        title: 'Sign In Failed',
-        description: error.message,
-      });
+        throw error;
     }
   };
+  
+  const signUp = async (email: string, password: string) => {
+    const { data, error } = await supabase.auth.signUp({
+        email,
+        password,
+        options: {
+            emailRedirectTo: `${window.location.origin}/`,
+        },
+    });
+    if (error) {
+        throw error;
+    }
+    return data;
+  }
 
   const handleSignOut = async () => {
     const { error } = await supabase.auth.signOut();
@@ -84,14 +94,15 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       });
     } else {
       toast({ description: 'Successfully signed out.' });
+      router.push('/');
     }
   };
 
   return (
     <AuthContext.Provider
-      value={{ user, session, loading, signIn, signOut: handleSignOut }}
+      value={{ user, session, loading, signInWithPassword, signUp, signOut: handleSignOut }}
     >
-      {!loading && children}
+      {children}
     </AuthContext.Provider>
   );
 }

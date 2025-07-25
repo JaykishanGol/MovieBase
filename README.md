@@ -1,3 +1,4 @@
+
 # Firebase Studio
 
 This is a NextJS starter in Firebase Studio.
@@ -19,10 +20,9 @@ NEXT_PUBLIC_SUPABASE_ANON_KEY=your-supabase-anon-key
 
 ### 2. Set up Database Tables
 
-You need to create the required tables in your Supabase database. Go to the "SQL Editor" in your Supabase dashboard and run the SQL commands from the `supabase_schema.sql` file in the root of this project. This will create the `lists`, `list_items`, `torrent_sites`, and `torrent_keywords` tables.
+You need to create the required tables in your Supabase database. Go to the "SQL Editor" in your Supabase dashboard and run the SQL commands from the `supabase_schema.sql` file in the root of this project. This will create the `profiles`, `lists`, `list_items`, `torrent_sites`, and `torrent_keywords` tables.
 
 ### 3. Set up Auth Provider
 
-This project uses Google as the authentication provider. You need to enable the Google provider in your Supabase project's "Authentication" -> "Providers" settings. You will need to get a client ID and secret from the Google Cloud Console.
+This project uses email and password authentication. You should enable it in your Supabase project's "Authentication" -> "Providers" settings. You may also want to disable the "Confirm email" setting in "Authentication" -> "Settings" for easier local development.
 
-Follow the Supabase documentation for detailed instructions: [Supabase Google Auth Docs](https://supabase.com/docs/guides/auth/social-login/auth-google)

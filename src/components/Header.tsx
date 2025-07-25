@@ -2,7 +2,7 @@
 'use client';
 
 import Link from 'next/link';
-import { Clapperboard } from 'lucide-react';
+import { Clapperboard, User } from 'lucide-react';
 import Search from './Search';
 import { usePathname } from 'next/navigation';
 import { cn } from '@/lib/utils';
@@ -19,11 +19,10 @@ import {
 } from '@/components/ui/dropdown-menu';
 import { Button } from './ui/button';
 import { Avatar, AvatarFallback, AvatarImage } from './ui/avatar';
-import { User } from 'lucide-react';
 
 export default function Header() {
   const pathname = usePathname();
-  const { user, signIn, signOut } = useAuth();
+  const { user, signOut } = useAuth();
 
   const navLinks = [
     { href: '/', label: 'Home', auth: false },
@@ -70,7 +69,9 @@ export default function Header() {
               <DropdownMenuTrigger asChild>
                 <Button variant="ghost" size="icon">
                   <Avatar className="h-8 w-8">
-                    <AvatarImage src={user?.user_metadata.avatar_url || ''} alt={user?.user_metadata.name || 'User'} />
+                    {user && (
+                      <AvatarImage src={user.user_metadata.avatar_url} alt={user.user_metadata.name || 'User'}/>
+                    )}
                     <AvatarFallback>
                       <User />
                     </AvatarFallback>
@@ -82,7 +83,7 @@ export default function Header() {
                   <>
                     <DropdownMenuLabel>
                       <div className="flex flex-col">
-                        <span>{user.user_metadata.name}</span>
+                        <span>{user.user_metadata.name || user.email}</span>
                         <span className="text-xs font-normal text-muted-foreground">{user.email}</span>
                       </div>
                     </DropdownMenuLabel>
@@ -93,8 +94,8 @@ export default function Header() {
                   </>
                 ) : (
                   <>
-                    <DropdownMenuItem onClick={() => signIn()}>
-                      Sign In with Google
+                    <DropdownMenuItem asChild>
+                      <Link href="/login">Sign In</Link>
                     </DropdownMenuItem>
                   </>
                 )}
