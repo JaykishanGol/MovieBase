@@ -2,12 +2,9 @@
 import type { Metadata } from 'next';
 import './globals.css';
 import { Inter } from 'next/font/google';
-import { WatchlistProvider } from '@/contexts/WatchlistContext';
 import { Toaster } from '@/components/ui/toaster';
 import Header from '@/components/Header';
-import { TorrentSettingsProvider } from '@/contexts/TorrentSettingsContext';
-import { ThemeProvider } from '@/contexts/ThemeContext';
-import { AuthProvider } from '@/contexts/AuthContext';
+import { Providers } from '@/contexts/Providers';
 
 const inter = Inter({ subsets: ['latin'], variable: '--font-inter' });
 
@@ -24,22 +21,11 @@ export default function RootLayout({
   return (
     <html lang="en" suppressHydrationWarning>
       <body className={`${inter.variable} font-body antialiased`}>
-        <ThemeProvider
-          attribute="class"
-          defaultTheme="dark"
-          enableSystem
-          disableTransitionOnChange
-        >
-          <AuthProvider>
-            <WatchlistProvider>
-              <TorrentSettingsProvider>
-                <Header />
-                <main>{children}</main>
-                <Toaster />
-              </TorrentSettingsProvider>
-            </WatchlistProvider>
-          </AuthProvider>
-        </ThemeProvider>
+        <Providers>
+          <Header />
+          <main>{children}</main>
+          <Toaster />
+        </Providers>
       </body>
     </html>
   );
