@@ -1,3 +1,4 @@
+
 import type {NextConfig} from 'next';
 const withPWA = require('next-pwa')({
   dest: 'public',
@@ -16,6 +17,7 @@ const nextConfig: NextConfig = {
     ignoreDuringBuilds: true,
   },
   images: {
+    unoptimized: true,
     remotePatterns: [
       {
         protocol: 'https',
