@@ -2,21 +2,33 @@
 'use client';
 
 import Link from 'next/link';
-import { Clapperboard, List, FileInput } from 'lucide-react';
+import { Clapperboard } from 'lucide-react';
 import Search from './Search';
 import { usePathname } from 'next/navigation';
 import { cn } from '@/lib/utils';
-import SurpriseMe from './SurpriseMe';
 import GenreDropdown from './GenreDropdown';
 import { ThemeToggle } from './ThemeToggle';
+import { useAuth } from '@/contexts/AuthContext';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
+import { Button } from './ui/button';
+import { Avatar, AvatarFallback, AvatarImage } from './ui/avatar';
+import { User } from 'lucide-react';
 
 export default function Header() {
   const pathname = usePathname();
+  const { user, signIn, signOut } = useAuth();
 
   const navLinks = [
-    { href: '/', label: 'Home' },
-    { href: '/lists', label: 'My Lists' },
-    { href: '/import', label: 'Import' },
+    { href: '/', label: 'Home', auth: false },
+    { href: '/lists', label: 'My Lists', auth: true },
+    { href: '/import', label: 'Import', auth: true },
   ];
 
   return (
@@ -29,25 +41,68 @@ export default function Header() {
           </Link>
         </div>
         <nav className="flex items-center space-x-6 text-sm font-medium">
-          {navLinks.map((link) => (
-            <Link
-              key={link.href}
-              href={link.href}
-              className={cn(
-                'transition-colors hover:text-primary',
-                (pathname === link.href || (link.href === '/lists' && pathname.startsWith('/list/'))) ? 'text-primary' : 'text-foreground/60'
-              )}
-            >
-              {link.label}
-            </Link>
-          ))}
+          {navLinks.map(
+            (link) =>
+              (!link.auth || (link.auth && user)) && (
+                <Link
+                  key={link.href}
+                  href={link.href}
+                  className={cn(
+                    'transition-colors hover:text-primary',
+                    pathname === link.href ||
+                      (link.href === '/lists' &&
+                        pathname.startsWith('/list/'))
+                      ? 'text-primary'
+                      : 'text-foreground/60'
+                  )}
+                >
+                  {link.label}
+                </Link>
+              )
+          )}
           <GenreDropdown media_type="movie" />
           <GenreDropdown media_type="tv" />
         </nav>
         <div className="flex flex-1 items-center justify-end space-x-4">
           <Search />
           <div className="flex items-center space-x-2">
-            <SurpriseMe />
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button variant="ghost" size="icon">
+                  <Avatar className="h-8 w-8">
+                    <AvatarImage src={user?.photoURL || ''} alt={user?.displayName || 'User'} />
+                    <AvatarFallback>
+                      <User />
+                    </AvatarFallback>
+                  </Avatar>
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end">
+                {user ? (
+                  <>
+                    <DropdownMenuLabel>
+                      <div className="flex flex-col">
+                        <span>{user.displayName}</span>
+                        <span className="text-xs font-normal text-muted-foreground">{user.email}</span>
+                      </div>
+                    </DropdownMenuLabel>
+                    <DropdownMenuSeparator />
+                    <DropdownMenuItem onClick={() => signOut()}>
+                      Logout
+                    </DropdownMenuItem>
+                  </>
+                ) : (
+                  <>
+                    <DropdownMenuItem onClick={() => signIn()}>
+                      Sign In
+                    </DropdownMenuItem>
+                     <DropdownMenuItem onClick={() => signIn()}>
+                      Sign Up
+                    </DropdownMenuItem>
+                  </>
+                )}
+              </DropdownMenuContent>
+            </DropdownMenu>
             <ThemeToggle />
           </div>
         </div>
