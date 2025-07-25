@@ -3,7 +3,7 @@ import Image from 'next/image';
 import { getTrending, getCertifiedMovies, getCertifiedTvShows } from '@/lib/tmdb';
 import { Button } from '@/components/ui/button';
 import { PlayCircle } from 'lucide-react';
-import WatchlistCarousel from '@/components/WatchlistCarousel';
+import HomeClientComponents from '@/components/HomeClientComponents';
 import MovieCarousel from '@/components/MovieCarousel';
 import { CarouselItem } from '@/types';
 
@@ -26,6 +26,16 @@ export default async function Home() {
 
   const certifiedMovieItems = transformToCarouselItems(certifiedMovies.results, 'movie');
   const certifiedTvShowItems = transformToCarouselItems(certifiedTvShows.results, 'tv');
+  
+  const movieCarouselData = {
+      title: "Certified Fresh Movies",
+      items: certifiedMovieItems
+  }
+  
+  const tvShowCarouselData = {
+        title: "Certified Fresh TV Shows",
+        items: certifiedTvShowItems
+  }
 
   return (
     <div className="flex flex-col">
@@ -55,11 +65,10 @@ export default async function Home() {
         </div>
       )}
 
-      <div className="container py-12 space-y-12">
-        <WatchlistCarousel />
-        <MovieCarousel title="Certified Fresh Movies" items={certifiedMovieItems} />
-        <MovieCarousel title="Certified Fresh TV Shows" items={certifiedTvShowItems} />
-      </div>
+      <HomeClientComponents 
+        movieCarousel={movieCarouselData}
+        tvShowCarousel={tvShowCarouselData}
+      />
     </div>
   );
 }

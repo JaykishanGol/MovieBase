@@ -30,6 +30,8 @@ interface WatchlistContextType {
   addItemToLists: (item: CarouselItem, listIds: string[]) => void;
   addItems: (items: CarouselItem[]) => void; // For bulk import
   watchlist: CarouselItem[]; // Legacy support for main watchlist
+  bulkDeleteItems: (listId: string, items: { media_id: number; media_type: 'movie' | 'tv' }[]) => Promise<void>;
+  bulkMoveItems: (sourceListId: string, destinationListId: string, items: CarouselItem[]) => Promise<void>;
 }
 
 const WatchlistContext = createContext<WatchlistContextType | undefined>(
@@ -201,7 +203,6 @@ export function WatchlistProvider({ children }: { children: ReactNode }) {
           if (error) console.error("Error removing items", error);
       }
       
-      // Debounced or batched updates would be better for performance here
       await fetchLists();
   };
   
@@ -236,6 +237,69 @@ export function WatchlistProvider({ children }: { children: ReactNode }) {
            await fetchLists();
       }
   };
+  
+  const bulkDeleteItems = async (listId: string, items: { media_id: number; media_type: 'movie' | 'tv' }[]) => {
+    if (!user || items.length === 0) return;
+
+    const orQuery = items.map(item => `and(media_id.eq.${item.media_id},media_type.eq.${item.media_type})`).join(',');
+    
+    const { error } = await supabase
+        .from('list_items')
+        .delete()
+        .eq('user_id', user.id)
+        .eq('list_id', listId)
+        .or(orQuery);
+        
+    if(error){
+        toast({ variant: 'destructive', title: 'Error', description: "Failed to delete items." });
+        console.error("Error bulk deleting items:", error);
+    } else {
+        toast({ description: `Deleted ${items.length} item(s).` });
+        await fetchLists();
+    }
+  };
+
+  const bulkMoveItems = async (sourceListId: string, destinationListId: string, items: CarouselItem[]) => {
+    if (!user || items.length === 0 || sourceListId === destinationListId) return;
+
+    // First, add items to the new list, ignoring duplicates
+    const itemsToInsert = items.map(item => ({
+        list_id: destinationListId,
+        user_id: user.id,
+        media_id: item.id,
+        media_type: item.media_type,
+        title: item.title,
+        poster_path: item.poster_path,
+        release_date: item.release_date
+    }));
+    
+    const { error: insertError } = await supabase.from('list_items').insert(itemsToInsert, { onConflict: 'list_id,media_id,media_type' });
+    
+    if (insertError) {
+      toast({ variant: 'destructive', title: 'Error', description: "Failed to move items." });
+      console.error("Error bulk moving (insert part):", insertError);
+      return;
+    }
+    
+    // Then, delete items from the old list
+    const orQuery = items.map(item => `and(media_id.eq.${item.id},media_type.eq.${item.media_type})`).join(',');
+    
+    const { error: deleteError } = await supabase
+      .from('list_items')
+      .delete()
+      .eq('user_id', user.id)
+      .eq('list_id', sourceListId)
+      .or(orQuery);
+      
+    if (deleteError) {
+      toast({ variant: 'destructive', title: 'Error', description: "Items were copied but failed to be removed from the original list." });
+      console.error("Error bulk moving (delete part):", deleteError);
+    } else {
+        toast({ description: `Moved ${items.length} item(s).` });
+    }
+    
+    await fetchLists();
+  }
 
   return (
     <WatchlistContext.Provider
@@ -247,6 +311,8 @@ export function WatchlistProvider({ children }: { children: ReactNode }) {
         addItemToLists,
         addItems,
         watchlist: lists.find(l => l.name === 'My Watchlist')?.items || [],
+        bulkDeleteItems,
+        bulkMoveItems,
       }}
     >
       {children}
