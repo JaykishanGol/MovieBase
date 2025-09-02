@@ -46,7 +46,7 @@ function SearchGenerator() {
 
   useEffect(() => {
     if (!settingsLoading) {
-      setSelectedSites(new Set(sites.filter(s => s.id.startsWith('default-')).map((site) => site.id)));
+      setSelectedSites(new Set(sites.map((site) => site.id)));
     }
   }, [settingsLoading, sites]);
 
